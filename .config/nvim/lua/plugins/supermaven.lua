@@ -1,6 +1,6 @@
 return {
 	"supermaven-inc/supermaven-nvim",
-	event = "VeryLazy",
+	event = "BufRead",
 	opts = {
 		keymaps = {
 			accept_suggestion = "<C-l>",

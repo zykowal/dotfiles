@@ -17,7 +17,7 @@ local function setup_matches()
 	vim.fn.matchadd("TodoFix", "\\<\\(FIX\\|fix\\|FIXME\\|fixme\\|BUG\\|bug\\):")
 end
 
-vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+vim.api.nvim_create_autocmd({ "BufRead" }, {
 	pattern = "*",
 	callback = setup_matches,
 })
