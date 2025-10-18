@@ -10,6 +10,7 @@ alias cat='bat'
 alias cd="z"
 alias ls="eza --icons=always"
 alias v="nvim"
+alias g="lazygit"
 
 eval "$(zoxide init zsh)"
 
