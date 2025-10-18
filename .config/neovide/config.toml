@@ -1,0 +1,13 @@
+fork = true
+frame = "transparent"
+idle = true
+maximized = false
+no-multigrid = false
+tabs = true
+title-hidden = true
+vsync = true
+wsl = false
+
+[font]
+normal = ["CaskaydiaCove Nerd Font Mono"]
+size = 16.0

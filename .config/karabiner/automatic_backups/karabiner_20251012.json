@@ -1,0 +1,440 @@
+{
+    "title": "Kanata-style Configuration",
+    "rules": [
+        {
+            "description": "Caps Lock: Escape on tap, Control on hold",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "caps_lock",
+                        "modifiers": {
+                            "optional": ["any"]
+                        }
+                    },
+                    "to": [
+                        {
+                            "key_code": "left_control"
+                        }
+                    ],
+                    "to_if_alone": [
+                        {
+                            "key_code": "escape"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "description": "Tab: Tab on tap, Numbers layer on hold",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "tab"
+                    },
+                    "to": [
+                        {
+                            "set_variable": {
+                                "name": "numbers_layer",
+                                "value": 1
+                            }
+                        }
+                    ],
+                    "to_after_key_up": [
+                        {
+                            "set_variable": {
+                                "name": "numbers_layer",
+                                "value": 0
+                            }
+                        }
+                    ],
+                    "to_if_alone": [
+                        {
+                            "key_code": "tab"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "description": "Space: Space on tap, Symbols layer on hold",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "spacebar"
+                    },
+                    "to": [
+                        {
+                            "set_variable": {
+                                "name": "symbols_layer",
+                                "value": 1
+                            }
+                        }
+                    ],
+                    "to_after_key_up": [
+                        {
+                            "set_variable": {
+                                "name": "symbols_layer",
+                                "value": 0
+                            }
+                        }
+                    ],
+                    "to_if_alone": [
+                        {
+                            "key_code": "spacebar"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "description": "Quote: Quote on tap, Function layer on hold",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {
+                        "key_code": "quote"
+                    },
+                    "to": [
+                        {
+                            "set_variable": {
+                                "name": "function_layer",
+                                "value": 1
+                            }
+                        }
+                    ],
+                    "to_after_key_up": [
+                        {
+                            "set_variable": {
+                                "name": "function_layer",
+                                "value": 0
+                            }
+                        }
+                    ],
+                    "to_if_alone": [
+                        {
+                            "key_code": "quote"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "description": "Numbers Layer - Right hand number pad",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {"key_code": "u"},
+                    "to": [{"key_code": "7"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "i"},
+                    "to": [{"key_code": "8"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "o"},
+                    "to": [{"key_code": "9"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "p"},
+                    "to": [{"key_code": "0"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "j"},
+                    "to": [{"key_code": "4"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "k"},
+                    "to": [{"key_code": "5"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "l"},
+                    "to": [{"key_code": "6"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "m"},
+                    "to": [{"key_code": "1"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "comma"},
+                    "to": [{"key_code": "2"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "period"},
+                    "to": [{"key_code": "3"}],
+                    "conditions": [{"type": "variable_if", "name": "numbers_layer", "value": 1}]
+                }
+            ]
+        },
+        {
+            "description": "Symbols Layer",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {"key_code": "q"},
+                    "to": [{"key_code": "grave_accent_and_tilde"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "w"},
+                    "to": [{"key_code": "grave_accent_and_tilde", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "e"},
+                    "to": [{"key_code": "9", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "r"},
+                    "to": [{"key_code": "0", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "t"},
+                    "to": [{"key_code": "open_bracket"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "y"},
+                    "to": [{"key_code": "close_bracket"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "u"},
+                    "to": [{"key_code": "open_bracket", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "i"},
+                    "to": [{"key_code": "close_bracket", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "o"},
+                    "to": [{"key_code": "quote", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "p"},
+                    "to": [{"key_code": "quote"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "a"},
+                    "to": [{"key_code": "7", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "s"},
+                    "to": [{"key_code": "2", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "d"},
+                    "to": [{"key_code": "3", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "f"},
+                    "to": [{"key_code": "4", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "g"},
+                    "to": [{"key_code": "backslash"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "h"},
+                    "to": [{"key_code": "delete_or_backspace"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "j"},
+                    "to": [{"key_code": "hyphen"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "k"},
+                    "to": [{"key_code": "hyphen", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "l"},
+                    "to": [{"key_code": "equal_sign"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "semicolon"},
+                    "to": [{"key_code": "equal_sign", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "z"},
+                    "to": [{"key_code": "5", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "x"},
+                    "to": [{"key_code": "6", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "c"},
+                    "to": [{"key_code": "1", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "v"},
+                    "to": [{"key_code": "8", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "b"},
+                    "to": [{"key_code": "backslash", "modifiers": ["shift"]}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "n"},
+                    "to": [{"key_code": "return_or_enter"}],
+                    "conditions": [{"type": "variable_if", "name": "symbols_layer", "value": 1}]
+                }
+            ]
+        },
+        {
+            "description": "Function Layer - F keys",
+            "manipulators": [
+                {
+                    "type": "basic",
+                    "from": {"key_code": "q"},
+                    "to": [{"key_code": "f12"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "w"},
+                    "to": [{"key_code": "f7"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "e"},
+                    "to": [{"key_code": "f8"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "r"},
+                    "to": [{"key_code": "f9"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "a"},
+                    "to": [{"key_code": "f11"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "s"},
+                    "to": [{"key_code": "f4"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "d"},
+                    "to": [{"key_code": "f5"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "f"},
+                    "to": [{"key_code": "f6"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "g"},
+                    "to": [{"key_code": "scroll_lock"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "z"},
+                    "to": [{"key_code": "f10"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "x"},
+                    "to": [{"key_code": "f1"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "c"},
+                    "to": [{"key_code": "f2"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "v"},
+                    "to": [{"key_code": "f3"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                },
+                {
+                    "type": "basic",
+                    "from": {"key_code": "b"},
+                    "to": [{"key_code": "pause"}],
+                    "conditions": [{"type": "variable_if", "name": "function_layer", "value": 1}]
+                }
+            ]
+        }
+    ]
+}

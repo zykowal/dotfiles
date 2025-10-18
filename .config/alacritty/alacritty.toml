@@ -1,0 +1,51 @@
+[window]
+padding = { x = 5, y = 5 }
+dynamic_padding = true
+decorations = "Buttonless"
+opacity = 0.7
+blur = true
+
+option_as_alt = "Both"
+
+[font]
+normal = { family = "IosevkaTerm Nerd Font Propo", style = "Regular" }
+bold = { family = "IosevkaTerm Nerd Font Propo", style = "Bold" }
+italic = { family = "IosevkaTerm Nerd Font Propo", style = "Italic" }
+bold_italic = { family = "IosevkaTerm Nerd Font Propo", style = "Bold Italic" }
+offset.y = 8
+glyph_offset.y = 4
+size = 19
+
+[terminal]
+shell = "/opt/homebrew/bin/tmux"
+osc52 = "CopyPaste"
+
+[mouse]
+hide_when_typing = true
+
+# Default colors
+[colors.primary]
+background = '#000000'
+foreground = '#a9b1d6'
+
+# Normal colors
+[colors.normal]
+black   = '#32344a'
+red     = '#f7768e'
+green   = '#9ece6a'
+yellow  = '#e0af68'
+blue    = '#7aa2f7'
+magenta = '#ad8ee6'
+cyan    = '#449dab'
+white   = '#9699a8'
+
+# Bright colors
+[colors.bright]
+black   = '#444b6a'
+red     = '#ff7a93'
+green   = '#b9f27c'
+yellow  = '#ff9e64'
+blue    = '#7da6ff'
+magenta = '#bb9af7'
+cyan    = '#0db9d7'
+white   = '#acb0d0'

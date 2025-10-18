@@ -1,0 +1,66 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-j": null
+    }
+  },
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      "j k": "vim::NormalBefore"
+    }
+  },
+  {
+    "context": "Editor && VimControl && !menu",
+    "bindings": {
+      "space f f": "file_finder::Toggle",
+      "space f w": "workspace::NewSearch",
+      "space f l": "vim::Search",
+      "space f k": "zed::OpenKeymap",
+      "space f d": "diagnostics::DeployCurrentFile",
+      "space f D": "diagnostics::Deploy",
+      "space e": "workspace::ToggleLeftDock",
+      "space o": "workspace::ToggleRightDock",
+      "space w": "workspace::Save",
+      "space h": "vim::GoToPreviousTab",
+      "space l": "vim::GoToTab",
+      "space c": "pane::CloseActiveItem",
+      "g r": "editor::FindAllReferences",
+      "L": ["workspace::SendKeystrokes", "$"],
+      "H": ["workspace::SendKeystrokes", "^"]
+    }
+  },
+  {
+    "context": "(Editor && mode == full)",
+    "bindings": {
+      "ctrl-h": null
+    }
+  },
+  {
+    "context": "(Editor && vim_mode == insert)",
+    "bindings": {
+      "ctrl-h": "editor::Backspace"
+    }
+  },
+  {
+    "bindings": {
+      "ctrl-j": "menu::SelectNext",
+      "ctrl-k": "menu::SelectPrevious"
+    }
+  },
+  {
+    "context": "Editor && (showing_code_actions || showing_completions)",
+    "bindings": {
+      "ctrl-k": "editor::ContextMenuPrevious",
+      "ctrl-j": "editor::ContextMenuNext"
+    }
+  }
+]
