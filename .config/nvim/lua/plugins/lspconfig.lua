@@ -48,9 +48,6 @@ return {
 					auto_update = false,
 					run_on_start = true,
 				})
-				vim.defer_fn(function()
-					vim.cmd("MasonToolsInstall")
-				end, 2000)
 			end,
 		},
 

@@ -48,8 +48,10 @@ return {
 
 			-- Blame
 			map("n", "<leader>gl", function()
-				gitsigns.blame_line()
+				gitsigns.blame_line({ full = true })
 			end, { desc = "View Git blame" })
+
+			map("n", "<leader>gL", "<Cmd>Gitsigns blame<CR>", { desc = "View Full Git blame" })
 
 			-- Diff
 			map("n", "<leader>gd", gitsigns.diffthis, { desc = "View diff for current file" })
