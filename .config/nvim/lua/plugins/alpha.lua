@@ -1,8 +1,7 @@
 return {
 	"goolord/alpha-nvim",
 	dependencies = {
-		"echasnovski/mini.nvim",
-		"nvim-lua/plenary.nvim",
+		{ "nvim-lua/plenary.nvim", lazy = true },
 	},
 	config = function()
 		local alpha = require("alpha")
