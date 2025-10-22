@@ -64,12 +64,6 @@ vim.keymap.set("n", "<C-w>m", require("local.window").toggle_window_maximize, { 
 -- Open lazygit
 vim.keymap.set("n", "<leader>gg", require("local.lazygit").toggle_lazygit, { desc = "Open lazygit" })
 
-vim.keymap.set(
-	"n",
-	"<leader>lh",
-	require("local.signature_help").toggle_signature_help,
-	{ desc = "Show signature help" }
-)
 vim.keymap.set("n", "gk", require("local.hover").toggle_hover, { desc = "Show hover information" })
 
 vim.keymap.set("n", "<leader>lr", vim.lsp.buf.rename, { desc = "Rename" })
