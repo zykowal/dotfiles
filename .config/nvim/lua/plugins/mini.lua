@@ -1,6 +1,6 @@
 return { -- Collection of various small independent plugins/modules
 	"echasnovski/mini.nvim",
-	lazy = true,
+	event = "BufRead",
 	version = "*",
 	config = function()
 		-- Better Around/Inside textobjects
@@ -32,17 +32,6 @@ return { -- Collection of various small independent plugins/modules
 		-- Split/Join blocks
 		require("mini.splitjoin").setup()
 
-		-- File explorer
-		require("mini.files").setup({
-			mappings = {
-				go_in = "",
-				go_in_plus = "l",
-				go_out = "",
-				go_out_plus = "h",
-				synchronize = "<CR>",
-			},
-		})
-
 		-- Autopairs
 		require("mini.pairs").setup()
 
@@ -52,60 +41,7 @@ return { -- Collection of various small independent plugins/modules
 		-- Icons
 		require("mini.icons").setup()
 	end,
-	init = function()
-		-- Starter
-		require("mini.starter").setup({
-			header = table.concat({
-				"                                                                                  ",
-				"                                                                                  ",
-				"                      *((##*                                                      ",
-				"                  /###%%#%&&&%,                           .%((//(/.               ",
-				"                  #%%&&&&@@@@@@@*                        #%#&%@&%%##%%            ",
-				"                 &&&@@@@@@@@@@@@@   .**(/(,*,/,*,       &@@@@@@@@@&&%%%*          ",
-				"                 @@@@@@@@@@&@*                         %@@@@@@@@@@@@&&&&          ",
-				"                  @@@@%/,               ,                 /@&%@@@@@@@&&&*         ",
-				"                   &@,                 .                      /%@@@@@@@&.         ",
-				"                .(..                  ,                         *#@@@@@#          ",
-				"              .(                                                 .@@@@*           ",
-				"              #                                                    (              ",
-				"             ,             *%@%             .@@@@&*                 ,             ",
-				"          *            /@@@@@@&            @@@@@@@@&                .*            ",
-				"          ,            @@@@@@@@,   ...  .   .@@@@@@@@@                 /          ",
-				"          /           @@@@@@/                  *&@@@@@&                           ",
-				"         /           ,@&@@@.    %@@@@@@@@@,     .#@@@&&                 ,         ",
-				"         #            (%%%/    *@@@@@@@@@%*      *&%#(*                 /         ",
-				"         *        .     .           /                   , .,.                     ",
-				"          .                /                     *                      *         ",
-				"          *                #.    ./%,%/.      ,%                       /..        ",
-				"          .,                                                        ,,*  *        ",
-				"            %*                                 (%%#%%(,          *&*..    ,       ",
-				"           ,/**#@%,**         ........ ...    #&&&@&&&%%%&(,#@@@@@&##%(%%#,,.     ",
-				"          .%@@@@@@@@@@@@@@@@@@@@@@@&@@@@@@@@@(@@@@@@&&@@%&%%&&&#@@@@@@@@&&&%(,    ",
-				"          (%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.@@@@@@@@@@@@@@@&&%&@%&@@@@@@@@@%#,   ",
-				"        *&@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/@@@@@@@@@@@@@@@@@@@@&%&&*&@@@@@@&&#.  ",
-				"        &@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/@@@@@@@@@@@@@@@@@@@@@&@@@&&(@@@@@@&%* ",
-				"      .#@@@@@@@@@@@@@@@@@@@@@@@@@@@&@@@%@@@(@@@@@@@@@@@@@@@@@@@@@@@@@&@@@@##@@@@#.",
-				"      /@@@@@@@@@@@%%&%@&##%&#%/(@(&#%%###%&%@/@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&/",
-				"     @@@@@@@@@@%((/((**,.,,,,*,,.,*.*.,*,,,,.. @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/",
-				"    .@@@@@@@@@/.*   .                           @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(",
-			}, "\n"),
-			items = {
-				{ name = "", action = "", section = "" },
-			},
-			footer = "",
-			query_updaters = "",
-		})
-	end,
 	keys = {
-		{
-			"<leader>e",
-			function()
-				if not require("mini.files").close() then
-					require("mini.files").open()
-				end
-			end,
-			desc = "Explorer",
-		},
 		{
 			"<leader>c",
 			function()
