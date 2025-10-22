@@ -5,7 +5,7 @@ return {
 	},
 	keys = {
 		{
-			"<Leader>f:",
+			"<Leader>:",
 			function()
 				require("fzf-lua").command_history({
 					winopts = {
@@ -14,7 +14,7 @@ return {
 					},
 				})
 			end,
-			desc = "Resume previous search",
+			desc = "Command history",
 		},
 		{
 			"<Leader>f<CR>",
@@ -37,7 +37,7 @@ return {
 					winopts = {
 						split = "belowright new",
 						preview = {
-							border = "border-left",
+							hidden = true,
 						},
 					},
 				})
@@ -57,7 +57,7 @@ return {
 					},
 				})
 			end,
-			desc = "Find AstroNvim config files",
+			desc = "Find config files",
 		},
 		{
 			"<Leader>fb",
@@ -125,6 +125,13 @@ return {
 			desc = "Find help",
 		},
 		{
+			"<Leader>fj",
+			function()
+				require("fzf-lua").jumps()
+			end,
+			desc = "Find jumps",
+		},
+		{
 			"<Leader>fk",
 			function()
 				require("fzf-lua").keymaps()
@@ -155,7 +162,7 @@ return {
 					},
 				})
 			end,
-			desc = "Find history",
+			desc = "Find old files",
 		},
 		{
 			"<Leader>fr",
@@ -184,7 +191,7 @@ return {
 					},
 				})
 			end,
-			desc = "Find words",
+			desc = "Fuzzy search words",
 		},
 		{
 			"<Leader>fW",
@@ -197,7 +204,7 @@ return {
 					},
 				})
 			end,
-			desc = "Find words in project",
+			desc = "Regex search words",
 		},
 		{
 			"<Leader>fd",
@@ -273,7 +280,7 @@ return {
 			function()
 				require("fzf-lua").lsp_references({
 					winopts = {
-						split = "aboveleft vnew",
+						-- split = "aboveleft vnew",
 						preview = {
 							layout = "vertical",
 							vertical = "down:62%",
@@ -289,7 +296,7 @@ return {
 			function()
 				require("fzf-lua").lsp_definitions({
 					winopts = {
-						split = "aboveleft vnew",
+						-- split = "aboveleft vnew",
 						preview = {
 							layout = "vertical",
 							vertical = "down:62%",
@@ -305,7 +312,7 @@ return {
 			function()
 				require("fzf-lua").lsp_declarations({
 					winopts = {
-						split = "aboveleft vnew",
+						-- split = "aboveleft vnew",
 						preview = {
 							layout = "vertical",
 							vertical = "down:62%",
@@ -321,7 +328,7 @@ return {
 			function()
 				require("fzf-lua").lsp_typedefs({
 					winopts = {
-						split = "aboveleft vnew",
+						-- split = "aboveleft vnew",
 						preview = {
 							layout = "vertical",
 							vertical = "down:62%",
@@ -337,7 +344,7 @@ return {
 			function()
 				require("fzf-lua").lsp_implementations({
 					winopts = {
-						split = "aboveleft vnew",
+						-- split = "aboveleft vnew",
 						preview = {
 							layout = "vertical",
 							vertical = "down:62%",
@@ -359,7 +366,7 @@ return {
 					},
 				})
 			end,
-			desc = "Find commands",
+			desc = "Find zoxide",
 		},
 
 		{
@@ -367,7 +374,7 @@ return {
 			function()
 				require("fzf-lua").spell_suggest()
 			end,
-			desc = "Find commands",
+			desc = "Spell suggest",
 		},
 		{
 			"<Leader>gb",
@@ -422,6 +429,10 @@ return {
 			desc = "Git status",
 		},
 	},
+	config = function(_, opts)
+		require("fzf-lua").setup(opts)
+		require("fzf-lua").register_ui_select()
+	end,
 	opts = {
 		{
 			"default-title",
