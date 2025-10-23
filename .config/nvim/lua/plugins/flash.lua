@@ -1,10 +1,14 @@
+if true then
+	return {}
+end
+
 return {
 	"folke/flash.nvim",
 	event = "BufRead",
 	opts = {
 		modes = {
 			char = {
-				jump_labels = true,
+				enabled = false,
 			},
 		},
 	},
