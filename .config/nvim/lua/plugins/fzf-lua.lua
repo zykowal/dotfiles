@@ -5,12 +5,23 @@ return {
 	},
 	keys = {
 		{
+			"<Leader>f",
+			"",
+			desc = "Find",
+		},
+		{
+			"<Leader>l",
+			"",
+			desc = "Lsp",
+		},
+		{
 			"<Leader>:",
 			function()
 				require("fzf-lua").command_history({
 					winopts = {
-						height = 0.647,
-						width = 0.4,
+						border = "rounded",
+						height = 0.45,
+						width = 0.6,
 					},
 				})
 			end,
@@ -24,6 +35,13 @@ return {
 			desc = "Resume previous search",
 		},
 		{
+			"<Leader>fm",
+			function()
+				require("fzf-lua").marks()
+			end,
+			desc = "Find marks",
+		},
+		{
 			"<Leader>f'",
 			function()
 				require("fzf-lua").marks()
@@ -31,7 +49,7 @@ return {
 			desc = "Find marks",
 		},
 		{
-			"<Leader>fl",
+			"<Leader>/",
 			function()
 				require("fzf-lua").blines({
 					winopts = {
@@ -58,6 +76,19 @@ return {
 				})
 			end,
 			desc = "Find config files",
+		},
+		{
+			"<Leader>.",
+			function()
+				require("fzf-lua").buffers({
+					winopts = {
+						preview = {
+							border = "border-left",
+						},
+					},
+				})
+			end,
+			desc = "Find buffers",
 		},
 		{
 			"<Leader>fb",
@@ -139,7 +170,7 @@ return {
 			desc = "Find keymaps",
 		},
 		{
-			"<Leader>fm",
+			"<Leader>fM",
 			function()
 				require("fzf-lua").manpages({
 					winopts = {
@@ -225,6 +256,20 @@ return {
 			desc = "Workspace diagnositics",
 		},
 		{
+			"<Leader>li",
+			function()
+				require("fzf-lua").lsp_incoming_calls()
+			end,
+			desc = "Incoming calls",
+		},
+		{
+			"<Leader>lo",
+			function()
+				require("fzf-lua").lsp_outgoing_calls()
+			end,
+			desc = "Outgoing calls",
+		},
+		{
 			"<Leader>ls",
 			function()
 				require("fzf-lua").lsp_document_symbols({
@@ -255,8 +300,8 @@ return {
 			function()
 				require("fzf-lua").lsp_code_actions({
 					winopts = {
-						height = 0.85,
-						width = 0.65,
+						height = 0.75,
+						width = 0.6,
 						preview = {
 							border = "border-bottom",
 							layout = "vertical",
@@ -368,13 +413,68 @@ return {
 			end,
 			desc = "Find zoxide",
 		},
-
+		{
+			"<Leader>fq",
+			function()
+				require("fzf-lua").quickfix()
+			end,
+			desc = "Find quickfix",
+		},
+		{
+			"<Leader>fQ",
+			function()
+				require("fzf-lua").quickfix_stack()
+			end,
+			desc = "Find quickfix stack",
+		},
+		{
+			"<Leader>fl",
+			function()
+				require("fzf-lua").loclist()
+			end,
+			desc = "Find loclist",
+		},
+		{
+			"<Leader>fL",
+			function()
+				require("fzf-lua").loclist_stack()
+			end,
+			desc = "Find loclist stack",
+		},
+		{
+			"<Leader>fg",
+			function()
+				require("fzf-lua").git_files()
+			end,
+			desc = "Search git files",
+		},
+		{
+			"<Leader>f/",
+			function()
+				require("fzf-lua").search_history()
+			end,
+			desc = "Search history",
+		},
 		{
 			"z=",
 			function()
 				require("fzf-lua").spell_suggest()
 			end,
 			desc = "Spell suggest",
+		},
+		{
+			"<Leader>gA",
+			function()
+				require("fzf-lua").git_stash()
+			end,
+			desc = "Git stash",
+		},
+		{
+			"<Leader>ga",
+			function()
+				require("fzf-lua").git_tags()
+			end,
+			desc = "Git tags",
 		},
 		{
 			"<Leader>gb",
@@ -430,8 +530,18 @@ return {
 		},
 	},
 	config = function(_, opts)
-		require("fzf-lua").setup(opts)
-		require("fzf-lua").register_ui_select()
+		local fzf_lua = require("fzf-lua")
+		fzf_lua.setup(opts or {})
+		fzf_lua.register_ui_select(function(_, items)
+			local min_h, max_h = 0.15, 0.70
+			local h = (#items + 4) / vim.o.lines
+			if h < min_h then
+				h = min_h
+			elseif h > max_h then
+				h = max_h
+			end
+			return { winopts = { height = h, width = 0.60, row = 0.40 } }
+		end)
 	end,
 	opts = {
 		{
