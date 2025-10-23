@@ -10,6 +10,7 @@ return {
 		"VimwikiGoBackLink",
 	},
 	keys = {
+		{ "<leader>n", "", desc = "Wiki" },
 		{ "<leader>ni", "<cmd>VimwikiIndex<CR>", desc = "Open wiki index" },
 		{ "<leader>nd", "<cmd>VimwikiMakeDiaryNote<CR>", desc = "Make diary note" },
 		{ "<leader>nx", "<cmd>VimwikiDeleteFile<CR>", desc = "Delete wiki file" },

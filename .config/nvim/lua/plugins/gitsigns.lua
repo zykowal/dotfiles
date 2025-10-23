@@ -11,6 +11,8 @@ return {
 				vim.keymap.set(mode, l, r, opts)
 			end
 
+			map("n", "<leader>g", "", { desc = "Git" })
+
 			-- Navigation
 			map("n", "]g", function()
 				gitsigns.nav_hunk("next")

@@ -25,6 +25,7 @@ vim.keymap.set("n", "<Leader>Q", "<Cmd>confirm qall<CR>", { desc = "Exit Window"
 vim.keymap.set("n", "|", "<Cmd>vsplit<CR>", { desc = "Vertical Split" })
 vim.keymap.set("n", "\\", "<Cmd>split<CR>", { desc = "Horizontal Split" })
 
+vim.keymap.set("n", "<Leader>p", "", { desc = "Packages" })
 vim.keymap.set("n", "<Leader>pi", function()
 	require("lazy").install()
 end, { desc = "Plugins Install" })
