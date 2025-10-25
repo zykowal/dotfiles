@@ -8,7 +8,7 @@ return {
 	opts = {
 		open_for_directories = true,
 		open_multiple_tabs = true,
-		floating_window_scaling_factor = 0.85,
+		floating_window_scaling_factor = 0.8,
 		keymaps = {
 			show_help = "<f1>",
 			open_file_in_vertical_split = "<c-v>",
