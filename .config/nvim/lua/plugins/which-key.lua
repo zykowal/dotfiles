@@ -45,4 +45,26 @@ return {
 			}
 		end
 	end,
+	keys = {
+		{
+			"<leader>p",
+			"",
+			desc = "Packages",
+		},
+		{
+			"<leader>g",
+			"",
+			desc = "Git",
+		},
+		{
+			"<Leader>f",
+			"",
+			desc = "Find",
+		},
+		{
+			"<Leader>l",
+			"",
+			desc = "Lsp",
+		},
+	},
 }
