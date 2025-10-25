@@ -177,6 +177,11 @@ return {
 		},
 		{
 			"<Leader>ft",
+			"<CMD>TodoFzfLua<CR>",
+			desc = "Find themes",
+		},
+		{
+			"<Leader>fT",
 			function()
 				require("fzf-lua").colorschemes()
 			end,
