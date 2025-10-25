@@ -30,6 +30,10 @@ return {
 						-- "gofumpt",
 						-- "golangci-lint",
 
+						-- rust
+						-- "codelldb",
+						-- "taplo",
+
 						-- c/cpp
 						-- "clangd",
 						-- "clang-format",

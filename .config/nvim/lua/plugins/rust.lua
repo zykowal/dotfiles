@@ -27,25 +27,6 @@ return {
 		},
 	},
 
-	-- Add Rust & related to treesitter
-	{
-		"nvim-treesitter/nvim-treesitter",
-		opts = { ensure_installed = { "rust", "ron", "toml" } },
-	},
-
-	-- Ensure Rust debugger is installed
-	{
-		"jay-babu/mason-nvim-dap.nvim",
-		optional = true,
-		opts = { ensure_installed = { "codelldb" } },
-	},
-
-	{
-		"WhoIsSethDaniel/mason-tool-installer.nvim",
-		optional = true,
-		opts = { ensure_installed = { "codelldb", "taplo" } },
-	},
-
 	{
 		"mrcjkb/rustaceanvim",
 		ft = { "rust" },
