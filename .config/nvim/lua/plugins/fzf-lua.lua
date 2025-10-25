@@ -5,21 +5,10 @@ return {
 	},
 	keys = {
 		{
-			"<Leader>f",
-			"",
-			desc = "Find",
-		},
-		{
-			"<Leader>l",
-			"",
-			desc = "Lsp",
-		},
-		{
 			"<Leader>:",
 			function()
 				require("fzf-lua").command_history({
 					winopts = {
-						border = "rounded",
 						height = 0.45,
 						width = 0.6,
 					},
@@ -37,14 +26,32 @@ return {
 		{
 			"<Leader>fm",
 			function()
-				require("fzf-lua").marks()
+				require("fzf-lua").marks({
+					winopts = {
+						width = 0.60,
+						height = 0.75,
+						preview = {
+							layout = "vertical",
+							vertical = "up:40%",
+						},
+					},
+				})
 			end,
 			desc = "Find marks",
 		},
 		{
 			"<Leader>f'",
 			function()
-				require("fzf-lua").marks()
+				require("fzf-lua").marks({
+					winopts = {
+						width = 0.60,
+						height = 0.75,
+						preview = {
+							layout = "vertical",
+							vertical = "up:40%",
+						},
+					},
+				})
 			end,
 			desc = "Find marks",
 		},
@@ -53,7 +60,6 @@ return {
 			function()
 				require("fzf-lua").blines({
 					winopts = {
-						split = "belowright new",
 						preview = {
 							hidden = true,
 						},
@@ -63,16 +69,18 @@ return {
 			desc = "Find words in current buffer",
 		},
 		{
+			"<Leader>fA",
+			function()
+				require("fzf-lua").autocmds()
+			end,
+			desc = "Find autocmds",
+		},
+		{
 			"<Leader>fa",
 			function()
 				require("fzf-lua").files({
 					prompt = "Config> ",
 					cwd = vim.fn.stdpath("config"),
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
 				})
 			end,
 			desc = "Find config files",
@@ -80,85 +88,58 @@ return {
 		{
 			"<Leader>.",
 			function()
-				require("fzf-lua").buffers({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").buffers()
 			end,
 			desc = "Find buffers",
 		},
 		{
 			"<Leader>fb",
 			function()
-				require("fzf-lua").buffers({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").buffers()
 			end,
 			desc = "Find buffers",
 		},
 		{
 			"<Leader>fc",
 			function()
-				require("fzf-lua").grep_cword({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").grep_cword()
 			end,
 			desc = "Find word under cursor",
 		},
 		{
 			"<Leader>fC",
 			function()
-				require("fzf-lua").commands({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").commands()
 			end,
 			desc = "Find commands",
 		},
 		{
 			"<Leader>ff",
 			function()
-				require("fzf-lua").files({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").files()
 			end,
 			desc = "Find files",
 		},
 		{
 			"<Leader>fh",
 			function()
-				require("fzf-lua").helptags({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").helptags()
 			end,
 			desc = "Find help",
 		},
 		{
 			"<Leader>fj",
 			function()
-				require("fzf-lua").jumps()
+				require("fzf-lua").jumps({
+					winopts = {
+						width = 0.60,
+						height = 0.75,
+						preview = {
+							layout = "vertical",
+							vertical = "up:40%",
+						},
+					},
+				})
 			end,
 			desc = "Find jumps",
 		},
@@ -172,26 +153,14 @@ return {
 		{
 			"<Leader>fM",
 			function()
-				require("fzf-lua").manpages({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").manpages()
 			end,
 			desc = "Find man",
 		},
 		{
 			"<Leader>fo",
 			function()
-				require("fzf-lua").oldfiles({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").oldfiles()
 			end,
 			desc = "Find old files",
 		},
@@ -199,7 +168,9 @@ return {
 			"<Leader>fr",
 			function()
 				require("fzf-lua").registers({
-					winopts = { preview = { hidden = true } },
+					winopts = {
+						preview = { hidden = true },
+					},
 				})
 			end,
 			desc = "Find registers",
@@ -214,26 +185,14 @@ return {
 		{
 			"<Leader>fw",
 			function()
-				require("fzf-lua").live_grep_native({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").live_grep_native()
 			end,
 			desc = "Fuzzy search words",
 		},
 		{
 			"<Leader>fW",
 			function()
-				require("fzf-lua").grep_project({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").grep_project()
 			end,
 			desc = "Regex search words",
 		},
@@ -241,7 +200,9 @@ return {
 			"<Leader>fd",
 			function()
 				require("fzf-lua").diagnostics_document({
-					winopts = { preview = { layout = "vertical", border = "border-top" } },
+					winopts = {
+						preview = { layout = "vertical", border = "border-top" },
+					},
 				})
 			end,
 			desc = "Document diagnositics",
@@ -250,7 +211,9 @@ return {
 			"<Leader>fD",
 			function()
 				require("fzf-lua").diagnostics_workspace({
-					winopts = { preview = { layout = "vertical", border = "border-top" } },
+					winopts = {
+						preview = { layout = "vertical", border = "border-top" },
+					},
 				})
 			end,
 			desc = "Workspace diagnositics",
@@ -272,26 +235,14 @@ return {
 		{
 			"<Leader>ls",
 			function()
-				require("fzf-lua").lsp_document_symbols({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").lsp_document_symbols()
 			end,
 			desc = "Search symbols",
 		},
 		{
 			"<Leader>lS",
 			function()
-				require("fzf-lua").lsp_live_workspace_symbols({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").lsp_live_workspace_symbols()
 			end,
 			desc = "Search workspace symbols",
 		},
@@ -300,8 +251,6 @@ return {
 			function()
 				require("fzf-lua").lsp_code_actions({
 					winopts = {
-						height = 0.75,
-						width = 0.6,
 						preview = {
 							border = "border-bottom",
 							layout = "vertical",
@@ -310,11 +259,6 @@ return {
 							delay = 10,
 							winopts = { number = false },
 						},
-					},
-					fzf_opts = {
-						["--layout"] = "default",
-						["--marker"] = "+",
-						["--cycle"] = true,
 					},
 				})
 			end,
@@ -403,13 +347,7 @@ return {
 		{
 			"<leader>fz",
 			function()
-				require("fzf-lua").zoxide({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").zoxide()
 			end,
 			desc = "Find zoxide",
 		},
@@ -479,52 +417,28 @@ return {
 		{
 			"<Leader>gb",
 			function()
-				require("fzf-lua").git_branches({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").git_branches()
 			end,
 			desc = "Git branches",
 		},
 		{
 			"<Leader>gc",
 			function()
-				require("fzf-lua").git_commits({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").git_commits()
 			end,
 			desc = "Git commits (repository)",
 		},
 		{
 			"<Leader>gC",
 			function()
-				require("fzf-lua").git_bcommits({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").git_bcommits()
 			end,
 			desc = "Git commits (current file)",
 		},
 		{
 			"<Leader>gt",
 			function()
-				require("fzf-lua").git_status({
-					winopts = {
-						preview = {
-							border = "border-left",
-						},
-					},
-				})
+				require("fzf-lua").git_status()
 			end,
 			desc = "Git status",
 		},
@@ -547,11 +461,18 @@ return {
 		{
 			"default-title",
 			"max-perf",
+			"border-fused",
 			"hide",
 		},
 		winopts = {
+			height = 0.80, -- window height
+			width = 0.75, -- window width
+			row = 0.50, -- window row position (0=top, 1=bottom)
+			col = 0.50, -- window col position (0=left, 1=right)
+			backdrop = 0,
 			preview = {
 				scrollbar = false,
+				horizontal = "right:62%",
 			},
 		},
 		keymap = {
@@ -559,11 +480,15 @@ return {
 				true,
 				["<C-d>"] = "preview-page-down",
 				["<C-u>"] = "preview-page-up",
+				["<C-l>"] = "toggle-preview",
 			},
 			fzf = {
 				true,
 				["ctrl-d"] = "preview-page-down",
 				["ctrl-u"] = "preview-page-up",
+				["ctrl-n"] = "half-page-down",
+				["ctrl-p"] = "half-page-up",
+				["ctrl-l"] = "toggle-preview",
 				["ctrl-q"] = "select-all+accept",
 			},
 		},
