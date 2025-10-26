@@ -28,11 +28,8 @@ return {
 			function()
 				require("fzf-lua").marks({
 					winopts = {
-						width = 0.60,
-						height = 0.75,
 						preview = {
-							layout = "vertical",
-							vertical = "up:40%",
+							border = "rounded",
 						},
 					},
 				})
@@ -44,11 +41,8 @@ return {
 			function()
 				require("fzf-lua").marks({
 					winopts = {
-						width = 0.60,
-						height = 0.75,
 						preview = {
-							layout = "vertical",
-							vertical = "up:40%",
+							border = "rounded",
 						},
 					},
 				})
@@ -58,20 +52,20 @@ return {
 		{
 			"<Leader>/",
 			function()
-				require("fzf-lua").blines({
-					winopts = {
-						preview = {
-							hidden = true,
-						},
-					},
-				})
+				require("fzf-lua").blines()
 			end,
 			desc = "Find words in current buffer",
 		},
 		{
 			"<Leader>fA",
 			function()
-				require("fzf-lua").autocmds()
+				require("fzf-lua").autocmds({
+					winopts = {
+						preview = {
+							border = "rounded",
+						},
+					},
+				})
 			end,
 			desc = "Find autocmds",
 		},
@@ -103,7 +97,13 @@ return {
 		{
 			"<Leader>fu",
 			function()
-				require("fzf-lua").changes()
+				require("fzf-lua").changes({
+					winopts = {
+						preview = {
+							border = "rounded",
+						},
+					},
+				})
 			end,
 			desc = "Find changes",
 		},
@@ -145,7 +145,13 @@ return {
 		{
 			"<Leader>fH",
 			function()
-				require("fzf-lua").highlights()
+				require("fzf-lua").highlights({
+					winopts = {
+						preview = {
+							border = "rounded",
+						},
+					},
+				})
 			end,
 			desc = "Find highlights",
 		},
@@ -154,11 +160,8 @@ return {
 			function()
 				require("fzf-lua").jumps({
 					winopts = {
-						width = 0.60,
-						height = 0.75,
 						preview = {
-							layout = "vertical",
-							vertical = "up:40%",
+							border = "rounded",
 						},
 					},
 				})
@@ -168,7 +171,13 @@ return {
 		{
 			"<Leader>fk",
 			function()
-				require("fzf-lua").keymaps()
+				require("fzf-lua").keymaps({
+					winopts = {
+						preview = {
+							border = "rounded",
+						},
+					},
+				})
 			end,
 			desc = "Find keymaps",
 		},
@@ -189,22 +198,14 @@ return {
 		{
 			'<Leader>f"',
 			function()
-				require("fzf-lua").registers({
-					winopts = {
-						preview = { hidden = true },
-					},
-				})
+				require("fzf-lua").registers()
 			end,
 			desc = "Find registers",
 		},
 		{
 			"<Leader>fr",
 			function()
-				require("fzf-lua").registers({
-					winopts = {
-						preview = { hidden = true },
-					},
-				})
+				require("fzf-lua").registers()
 			end,
 			desc = "Find registers",
 		},
@@ -237,22 +238,14 @@ return {
 		{
 			"<Leader>fd",
 			function()
-				require("fzf-lua").diagnostics_document({
-					winopts = {
-						preview = { layout = "vertical", border = "border-top" },
-					},
-				})
+				require("fzf-lua").diagnostics_document()
 			end,
 			desc = "Document diagnositics",
 		},
 		{
 			"<Leader>fD",
 			function()
-				require("fzf-lua").diagnostics_workspace({
-					winopts = {
-						preview = { layout = "vertical", border = "border-top" },
-					},
-				})
+				require("fzf-lua").diagnostics_workspace()
 			end,
 			desc = "Workspace diagnositics",
 		},
@@ -287,143 +280,63 @@ return {
 		{
 			"<Leader>la",
 			function()
-				require("fzf-lua").lsp_code_actions({
-					winopts = {
-						preview = {
-							border = "border-bottom",
-							layout = "vertical",
-							vertical = "up:68%",
-							flip_columns = 120,
-							delay = 10,
-							winopts = { number = false },
-						},
-					},
-				})
+				require("fzf-lua").lsp_code_actions()
 			end,
 			desc = "Code actions",
 		},
 		{
 			"gp",
 			function()
-				require("fzf-lua").lsp_finder({
-					winopts = {
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_finder()
 			end,
 			desc = "Lsp finder",
 		},
 		{
 			"gh",
 			function()
-				require("fzf-lua").lsp_type_sub({
-					winopts = {
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_type_sub()
 			end,
 			desc = "Show subtypes",
 		},
 		{
 			"gH",
 			function()
-				require("fzf-lua").lsp_type_super({
-					winopts = {
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_type_super()
 			end,
 			desc = "Show supertypes",
 		},
 		{
 			"gr",
 			function()
-				require("fzf-lua").lsp_references({
-					winopts = {
-						-- split = "aboveleft vnew",
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_references()
 			end,
 			desc = "Search references",
 		},
 		{
 			"gd",
 			function()
-				require("fzf-lua").lsp_definitions({
-					winopts = {
-						-- split = "aboveleft vnew",
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_definitions()
 			end,
 			desc = "Search definitions",
 		},
 		{
 			"gD",
 			function()
-				require("fzf-lua").lsp_declarations({
-					winopts = {
-						-- split = "aboveleft vnew",
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_declarations()
 			end,
 			desc = "Search declarations",
 		},
 		{
 			"gy",
 			function()
-				require("fzf-lua").lsp_typedefs({
-					winopts = {
-						-- split = "aboveleft vnew",
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_typedefs()
 			end,
 			desc = "Search type definitions",
 		},
 		{
 			"gI",
 			function()
-				require("fzf-lua").lsp_implementations({
-					winopts = {
-						-- split = "aboveleft vnew",
-						preview = {
-							layout = "vertical",
-							vertical = "down:62%",
-							border = "border-top",
-						},
-					},
-				})
+				require("fzf-lua").lsp_implementations()
 			end,
 			desc = "Search implementations",
 		},
@@ -552,6 +465,7 @@ return {
 			"default-title",
 			"max-perf",
 			"border-fused",
+			"ivy",
 			"hide",
 		},
 		winopts = {
@@ -560,6 +474,7 @@ return {
 			row = 0.50, -- window row position (0=top, 1=bottom)
 			col = 0.50, -- window col position (0=left, 1=right)
 			backdrop = 0,
+			border = "rounded",
 			preview = {
 				scrollbar = false,
 				horizontal = "right:62%",
