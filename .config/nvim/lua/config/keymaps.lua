@@ -39,13 +39,6 @@ vim.keymap.set("n", "<C-Down>", "<Cmd>resize +2<CR>", { desc = "Resize split dow
 vim.keymap.set("n", "<C-Left>", "<Cmd>vertical resize -2<CR>", { desc = "Resize split left" })
 vim.keymap.set("n", "<C-Right>", "<Cmd>vertical resize +2<CR>", { desc = "Resize split right" })
 
-vim.keymap.set("n", "gh", function()
-	vim.lsp.buf.typehierarchy("subtypes")
-end, { desc = "Show subtypes" })
-vim.keymap.set("n", "gH", function()
-	vim.lsp.buf.typehierarchy("supertypes")
-end, { desc = "Show supertypes" })
-
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 

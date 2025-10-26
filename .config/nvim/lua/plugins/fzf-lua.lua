@@ -93,6 +93,21 @@ return {
 			desc = "Find buffers",
 		},
 		{
+			"<Leader>fv",
+			function()
+				require("fzf-lua").grep_visual()
+			end,
+			mode = "v",
+			desc = "Find visual selection",
+		},
+		{
+			"<Leader>fu",
+			function()
+				require("fzf-lua").changes()
+			end,
+			desc = "Find changes",
+		},
+		{
 			"<Leader>fb",
 			function()
 				require("fzf-lua").buffers()
@@ -126,6 +141,13 @@ return {
 				require("fzf-lua").helptags()
 			end,
 			desc = "Find help",
+		},
+		{
+			"<Leader>fH",
+			function()
+				require("fzf-lua").highlights()
+			end,
+			desc = "Find highlights",
 		},
 		{
 			"<Leader>fj",
@@ -163,6 +185,17 @@ return {
 				require("fzf-lua").oldfiles()
 			end,
 			desc = "Find old files",
+		},
+		{
+			'<Leader>f"',
+			function()
+				require("fzf-lua").registers({
+					winopts = {
+						preview = { hidden = true },
+					},
+				})
+			end,
+			desc = "Find registers",
 		},
 		{
 			"<Leader>fr",
@@ -268,6 +301,51 @@ return {
 				})
 			end,
 			desc = "Code actions",
+		},
+		{
+			"gp",
+			function()
+				require("fzf-lua").lsp_finder({
+					winopts = {
+						preview = {
+							layout = "vertical",
+							vertical = "down:62%",
+							border = "border-top",
+						},
+					},
+				})
+			end,
+			desc = "Lsp finder",
+		},
+		{
+			"gh",
+			function()
+				require("fzf-lua").lsp_type_sub({
+					winopts = {
+						preview = {
+							layout = "vertical",
+							vertical = "down:62%",
+							border = "border-top",
+						},
+					},
+				})
+			end,
+			desc = "Show subtypes",
+		},
+		{
+			"gH",
+			function()
+				require("fzf-lua").lsp_type_super({
+					winopts = {
+						preview = {
+							layout = "vertical",
+							vertical = "down:62%",
+							border = "border-top",
+						},
+					},
+				})
+			end,
+			desc = "Show supertypes",
 		},
 		{
 			"gr",
@@ -404,6 +482,13 @@ return {
 				require("fzf-lua").spell_suggest()
 			end,
 			desc = "Spell suggest",
+		},
+		{
+			"<Leader>gw",
+			function()
+				require("fzf-lua").git_worktrees()
+			end,
+			desc = "Git worktrees",
 		},
 		{
 			"<Leader>gA",
