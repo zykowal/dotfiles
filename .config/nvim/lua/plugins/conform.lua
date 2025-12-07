@@ -8,7 +8,6 @@ return {
 			function()
 				require("conform").format({ async = true, lsp_format = "fallback" })
 			end,
-			mode = "",
 			desc = "Format buffer",
 		},
 	},
@@ -18,15 +17,15 @@ return {
 			lua = { "stylua" },
 
 			-- python
-			-- python = { "ruff_organize_imports", "ruff_format", "ruff", lsp_format = "fallback" },
-			-- toml = { "taplo", "taplo_format", lsp_format = "fallback" },
+			python = { "ruff_organize_imports", "ruff_format", "ruff", lsp_format = "fallback" },
+			toml = { "taplo", "taplo_format", lsp_format = "fallback" },
 
 			-- golang
-			-- go = { "goimports", "gofumpt", lsp_format = "last" },
+			go = { "goimports", "gofumpt", lsp_format = "first" },
 
 			-- c/cpp
-			-- c = { "clang-format" },
-			-- cpp = { "clang-format" },
+			c = { "clang-format" },
+			cpp = { "clang-format" },
 
 			-- js/ts
 			-- javascript = { "prettierd", lsp_format = "fallback" },

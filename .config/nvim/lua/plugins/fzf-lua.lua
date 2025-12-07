@@ -1,3 +1,7 @@
+if true then
+	return {}
+end
+
 return {
 	"ibhagwan/fzf-lua",
 	dependencies = {
@@ -52,7 +56,7 @@ return {
 		{
 			"<Leader>/",
 			function()
-				require("fzf-lua").blines()
+				require("fzf-lua").blines({ winopts = { preview = { hidden = true } } })
 			end,
 			desc = "Find words in current buffer",
 		},
@@ -198,21 +202,21 @@ return {
 		{
 			'<Leader>f"',
 			function()
-				require("fzf-lua").registers()
+				require("fzf-lua").registers({ winopts = { preview = { hidden = true } } })
 			end,
 			desc = "Find registers",
 		},
 		{
 			"<Leader>fr",
 			function()
-				require("fzf-lua").registers()
+				require("fzf-lua").registers({ winopts = { preview = { hidden = true } } })
 			end,
 			desc = "Find registers",
 		},
 		{
 			"<Leader>ft",
 			"<CMD>TodoFzfLua<CR>",
-			desc = "Find themes",
+			desc = "Find todos",
 		},
 		{
 			"<Leader>fT",
@@ -445,19 +449,26 @@ return {
 			end,
 			desc = "Git status",
 		},
+		{
+			"<C-x><C-f>",
+			function()
+				require("fzf-lua").complete_path({
+					winopts = {
+						height = 0.5,
+						width = 0.6,
+						relative = "cursor",
+					},
+				})
+			end,
+			mode = "i",
+			desc = "fuzzy complete path",
+		},
 	},
 	config = function(_, opts)
 		local fzf_lua = require("fzf-lua")
 		fzf_lua.setup(opts or {})
-		fzf_lua.register_ui_select(function(_, items)
-			local min_h, max_h = 0.15, 0.70
-			local h = (#items + 4) / vim.o.lines
-			if h < min_h then
-				h = min_h
-			elseif h > max_h then
-				h = max_h
-			end
-			return { winopts = { height = h, width = 0.60, row = 0.40 } }
+		fzf_lua.register_ui_select(function(_, _)
+			return { winopts = { height = 0.7, width = 0.5 } }
 		end)
 	end,
 	opts = {
@@ -465,7 +476,6 @@ return {
 			"default-title",
 			"max-perf",
 			"border-fused",
-			"ivy",
 			"hide",
 		},
 		winopts = {
@@ -473,11 +483,12 @@ return {
 			width = 0.75, -- window width
 			row = 0.50, -- window row position (0=top, 1=bottom)
 			col = 0.50, -- window col position (0=left, 1=right)
-			backdrop = 0,
 			border = "rounded",
 			preview = {
 				scrollbar = false,
+				layout = "vertical",
 				horizontal = "right:62%",
+				vertical = "down:62%",
 			},
 		},
 		keymap = {

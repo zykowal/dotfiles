@@ -20,15 +20,15 @@ return {
 						-- "taplo",
 
 						-- golang
-						-- "delve",
-						-- "gopls",
-						-- "gomodifytags",
-						-- "gotests",
-						-- "iferr",
-						-- "impl",
-						-- "goimports",
-						-- "gofumpt",
-						-- "golangci-lint",
+						"delve",
+						"gopls",
+						"gomodifytags",
+						"gotests",
+						"iferr",
+						"impl",
+						"goimports",
+						"gofumpt",
+						"golangci-lint",
 
 						-- rust
 						-- "codelldb",
@@ -50,7 +50,7 @@ return {
 						"stylua",
 					},
 					auto_update = false,
-					run_on_start = true,
+					run_on_start = false,
 				})
 			end,
 		},
@@ -251,53 +251,53 @@ return {
 			-- },
 
 			-- golang
-			-- gopls = {
-			-- 	settings = {
-			-- 		gopls = {
-			-- 			analyses = {
-			-- 				ST1003 = true,
-			-- 				fieldalignment = false,
-			-- 				fillreturns = true,
-			-- 				nilness = true,
-			-- 				nonewvars = true,
-			-- 				shadow = true,
-			-- 				undeclaredname = true,
-			-- 				unreachable = true,
-			-- 				unusedparams = true,
-			-- 				unusedwrite = true,
-			-- 				useany = true,
-			-- 			},
-			-- 			codelenses = {
-			-- 				gc_details = false,
-			-- 				generate = true, -- show the `go generate` lens.
-			-- 				regenerate_cgo = true,
-			-- 				run_govulncheck = true,
-			-- 				test = true,
-			-- 				tidy = true,
-			-- 				upgrade_dependency = true,
-			-- 				vendor = true,
-			-- 			},
-			-- 			hints = {
-			-- 				assignVariableTypes = true,
-			-- 				compositeLiteralFields = true,
-			-- 				compositeLiteralTypes = true,
-			-- 				constantValues = true,
-			-- 				functionTypeParameters = true,
-			-- 				parameterNames = true,
-			-- 				rangeVariableTypes = true,
-			-- 			},
-			-- 			buildFlags = { "-tags", "integration" },
-			-- 			completeUnimported = true,
-			-- 			directoryFilters = { "-.git", "-.vscode", "-.idea", "-.vscode-test", "-node_modules" },
-			-- 			gofumpt = true,
-			-- 			matcher = "Fuzzy",
-			-- 			semanticTokens = true,
-			-- 			staticcheck = true,
-			-- 			symbolMatcher = "fuzzy",
-			-- 			usePlaceholders = true,
-			-- 		},
-			-- 	},
-			-- },
+			gopls = {
+				settings = {
+					gopls = {
+						analyses = {
+							ST1003 = true,
+							fieldalignment = false,
+							fillreturns = true,
+							nilness = true,
+							nonewvars = true,
+							shadow = true,
+							undeclaredname = true,
+							unreachable = true,
+							unusedparams = true,
+							unusedwrite = true,
+							useany = true,
+						},
+						codelenses = {
+							gc_details = false,
+							generate = true, -- show the `go generate` lens.
+							regenerate_cgo = true,
+							run_govulncheck = true,
+							test = true,
+							tidy = true,
+							upgrade_dependency = true,
+							vendor = true,
+						},
+						hints = {
+							assignVariableTypes = true,
+							compositeLiteralFields = true,
+							compositeLiteralTypes = true,
+							constantValues = true,
+							functionTypeParameters = true,
+							parameterNames = true,
+							rangeVariableTypes = true,
+						},
+						buildFlags = { "-tags", "integration" },
+						completeUnimported = true,
+						directoryFilters = { "-.git", "-.vscode", "-.idea", "-.vscode-test", "-node_modules" },
+						gofumpt = true,
+						matcher = "Fuzzy",
+						semanticTokens = true,
+						staticcheck = true,
+						symbolMatcher = "fuzzy",
+						usePlaceholders = true,
+					},
+				},
+			},
 
 			-- c/cpp
 			clangd = {

@@ -1,7 +1,6 @@
 -- Restore last cursor position when reopening a file
-local last_cursor_group = vim.api.nvim_create_augroup("LastCursorGroup", {})
 vim.api.nvim_create_autocmd("BufReadPost", {
-	group = last_cursor_group,
+	group = vim.api.nvim_create_augroup("LastCursorGroup", {}),
 	callback = function()
 		local mark = vim.api.nvim_buf_get_mark(0, '"')
 		local lcount = vim.api.nvim_buf_line_count(0)
@@ -12,9 +11,8 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 })
 
 -- Highlight the yanked text for 200ms
-local highlight_yank_group = vim.api.nvim_create_augroup("HighlightYank", {})
 vim.api.nvim_create_autocmd("TextYankPost", {
-	group = highlight_yank_group,
+	group = vim.api.nvim_create_augroup("HighlightYank", { clear = true }),
 	pattern = "*",
 	callback = function()
 		vim.hl.on_yank({
@@ -24,6 +22,22 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 
+-- Show cursorline only in active window
+vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
+	group = vim.api.nvim_create_augroup("CursorLine", { clear = true }),
+	callback = function()
+		vim.opt.cursorline = true
+	end,
+})
+
+vim.api.nvim_create_autocmd({ "WinLeave", "BufLeave" }, {
+	group = "CursorLine",
+	callback = function()
+		vim.opt.cursorline = false
+	end,
+})
+
+-- Change cursor color in different modes
 local function set_cursor_color()
 	vim.opt.guicursor = {
 		"n-v-c:block-Cursor/lCursor",
