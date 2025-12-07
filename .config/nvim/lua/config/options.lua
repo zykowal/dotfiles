@@ -6,7 +6,7 @@ vim.opt.cmdheight = 0 -- hide command line unless needed
 vim.opt.completeopt = { "menu", "menuone", "noselect" } -- Options for insert mode completion
 vim.opt.confirm = true -- raise a dialog asking if you wish to save the current file(s)
 vim.opt.copyindent = true -- copy the previous indentation on autoindenting
-vim.opt.cursorline = true -- highlight the text line of the cursor
+vim.opt.cursorline = false -- highlight the text line of the cursor
 vim.opt.diffopt = vim.list_extend(vim.opt.diffopt:get(), { "algorithm:histogram", "linematch:60" }) -- enable linematch diff algorithm
 vim.opt.expandtab = true -- enable the use of space in tab
 vim.opt.fillchars = { eob = " " } -- disable `~` on nonexistent lines

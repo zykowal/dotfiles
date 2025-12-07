@@ -22,21 +22,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 	end,
 })
 
--- Show cursorline only in active window
-vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
-	group = vim.api.nvim_create_augroup("CursorLine", { clear = true }),
-	callback = function()
-		vim.opt.cursorline = true
-	end,
-})
-
-vim.api.nvim_create_autocmd({ "WinLeave", "BufLeave" }, {
-	group = "CursorLine",
-	callback = function()
-		vim.opt.cursorline = false
-	end,
-})
-
 -- Change cursor color in different modes
 local function set_cursor_color()
 	vim.opt.guicursor = {
