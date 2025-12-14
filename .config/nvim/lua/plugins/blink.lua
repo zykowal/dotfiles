@@ -139,7 +139,7 @@ return {
 			enabled = true,
 			window = {
 				border = "none",
-				show_documentation = false,
+				show_documentation = true,
 			},
 		},
 

@@ -6,38 +6,35 @@ return {
 		-- Automatically install LSPs and related tools to stdpath for Neovim
 		-- Mason must be loaded before its dependents so we need to set it up here.
 		-- NOTE: `opts = {}` is the same as calling `require('mason').setup({})`
-		{ "mason-org/mason.nvim", opts = {} },
-		"mason-org/mason-lspconfig.nvim",
+		{ "mason-org/mason.nvim", event = "BufRead", opts = {} },
+		{ "mason-org/mason-lspconfig.nvim", event = "BufRead" },
 		{
 			"WhoIsSethDaniel/mason-tool-installer.nvim",
+			event = "BufRead",
 			config = function()
 				require("mason-tool-installer").setup({
 					ensure_installed = {
 						-- python
-						-- "ruff",
-						-- "basedpyright",
-						-- "debugpy",
-						-- "taplo",
+						"ruff",
+						"basedpyright",
+						"debugpy",
+						"taplo",
 
 						-- golang
-						"delve",
-						"gopls",
-						"gomodifytags",
-						"gotests",
-						"iferr",
-						"impl",
-						"goimports",
-						"gofumpt",
-						"golangci-lint",
-
-						-- rust
-						-- "codelldb",
-						-- "taplo",
+						-- "delve",
+						-- "gopls",
+						-- "gomodifytags",
+						-- "gotests",
+						-- "iferr",
+						-- "impl",
+						-- "goimports",
+						-- "gofumpt",
+						-- "golangci-lint",
 
 						-- c/cpp
-						-- "clangd",
-						-- "clang-format",
-						-- "codelldb",
+						"clangd",
+						"clang-format",
+						"codelldb",
 
 						-- js/ts
 						-- "vtsls"
@@ -50,7 +47,7 @@ return {
 						"stylua",
 					},
 					auto_update = false,
-					run_on_start = false,
+					run_on_start = true,
 				})
 			end,
 		},
@@ -134,14 +131,7 @@ return {
 				--
 				-- When you move your cursor, the highlights will be cleared (the second autocommand).
 				local client = vim.lsp.get_client_by_id(event.data.client_id)
-				if
-					client
-					and client_supports_method(
-						client,
-						vim.lsp.protocol.Methods.textDocument_documentHighlight,
-						event.buf
-					)
-				then
+				if client and client_supports_method(client, "textDocument/documentHighlight", event.buf) then
 					local highlight_augroup = vim.api.nvim_create_augroup("kickstart-lsp-highlight", { clear = false })
 					vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
 						buffer = event.buf,
@@ -162,6 +152,12 @@ return {
 							vim.api.nvim_clear_autocmds({ group = "kickstart-lsp-highlight", buffer = event2.buf })
 						end,
 					})
+				end
+
+				if client and client_supports_method(client, "textDocument/inlayHint", event.buf) then
+					map("<leader>lI", function()
+						vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = event.buf }))
+					end, "[T]oggle Inlay [H]ints")
 				end
 			end,
 		})
@@ -199,8 +195,8 @@ return {
 		--  By default, Neovim doesn't support everything that is in the LSP specification.
 		--  When you add blink.cmp, luasnip, etc. Neovim now has *more* capabilities.
 		--  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
-		local origin_capabilities = vim.lsp.protocol.make_client_capabilities()
-		local capabilities = require("blink.cmp").get_lsp_capabilities(origin_capabilities)
+		local capabilities = vim.lsp.protocol.make_client_capabilities()
+		capabilities = require("blink.cmp").get_lsp_capabilities(capabilities)
 
 		-- Enable the following language servers
 		--  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -251,53 +247,53 @@ return {
 			-- },
 
 			-- golang
-			gopls = {
-				settings = {
-					gopls = {
-						analyses = {
-							ST1003 = true,
-							fieldalignment = false,
-							fillreturns = true,
-							nilness = true,
-							nonewvars = true,
-							shadow = true,
-							undeclaredname = true,
-							unreachable = true,
-							unusedparams = true,
-							unusedwrite = true,
-							useany = true,
-						},
-						codelenses = {
-							gc_details = false,
-							generate = true, -- show the `go generate` lens.
-							regenerate_cgo = true,
-							run_govulncheck = true,
-							test = true,
-							tidy = true,
-							upgrade_dependency = true,
-							vendor = true,
-						},
-						hints = {
-							assignVariableTypes = true,
-							compositeLiteralFields = true,
-							compositeLiteralTypes = true,
-							constantValues = true,
-							functionTypeParameters = true,
-							parameterNames = true,
-							rangeVariableTypes = true,
-						},
-						buildFlags = { "-tags", "integration" },
-						completeUnimported = true,
-						directoryFilters = { "-.git", "-.vscode", "-.idea", "-.vscode-test", "-node_modules" },
-						gofumpt = true,
-						matcher = "Fuzzy",
-						semanticTokens = true,
-						staticcheck = true,
-						symbolMatcher = "fuzzy",
-						usePlaceholders = true,
-					},
-				},
-			},
+			-- gopls = {
+			-- 	settings = {
+			-- 		gopls = {
+			-- 			analyses = {
+			-- 				ST1003 = true,
+			-- 				fieldalignment = false,
+			-- 				fillreturns = true,
+			-- 				nilness = true,
+			-- 				nonewvars = true,
+			-- 				shadow = true,
+			-- 				undeclaredname = true,
+			-- 				unreachable = true,
+			-- 				unusedparams = true,
+			-- 				unusedwrite = true,
+			-- 				useany = true,
+			-- 			},
+			-- 			codelenses = {
+			-- 				gc_details = false,
+			-- 				generate = true, -- show the `go generate` lens.
+			-- 				regenerate_cgo = true,
+			-- 				run_govulncheck = true,
+			-- 				test = true,
+			-- 				tidy = true,
+			-- 				upgrade_dependency = true,
+			-- 				vendor = true,
+			-- 			},
+			-- 			hints = {
+			-- 				assignVariableTypes = true,
+			-- 				compositeLiteralFields = true,
+			-- 				compositeLiteralTypes = true,
+			-- 				constantValues = true,
+			-- 				functionTypeParameters = true,
+			-- 				parameterNames = true,
+			-- 				rangeVariableTypes = true,
+			-- 			},
+			-- 			buildFlags = { "-tags", "integration" },
+			-- 			completeUnimported = true,
+			-- 			directoryFilters = { "-.git", "-.vscode", "-.idea", "-.vscode-test", "-node_modules" },
+			-- 			gofumpt = true,
+			-- 			matcher = "Fuzzy",
+			-- 			semanticTokens = true,
+			-- 			staticcheck = true,
+			-- 			symbolMatcher = "fuzzy",
+			-- 			usePlaceholders = true,
+			-- 		},
+			-- 	},
+			-- },
 
 			-- c/cpp
 			clangd = {
@@ -391,7 +387,9 @@ return {
 					-- by the server configuration above. Useful when disabling
 					-- certain features of an LSP (for example, turning off formatting for ts_ls)
 					server.capabilities = vim.tbl_deep_extend("force", {}, capabilities, server.capabilities or {})
-					require("lspconfig")[server_name].setup(server)
+					-- require("lspconfig")[server_name].setup(server)
+					vim.lsp.config(server_name, server)
+					vim.lsp.enable(server_name)
 				end,
 			},
 		})

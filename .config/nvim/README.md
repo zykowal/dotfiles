@@ -17,7 +17,7 @@ A minimal Neovim configuration focused on essential development features.
 - **fzf-lua** - Improved fzf.vim written in lua
 
 ### Motion
-- **leap.nvim** - Lightning-fast motion plugin
+- **flash.nvim** - Lightning-fast motion plugin
 
 ### Language Support
 - **nvim-treesitter** - Syntax highlighting and code parsing

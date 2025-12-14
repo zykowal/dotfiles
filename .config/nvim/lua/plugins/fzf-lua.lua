@@ -1,7 +1,3 @@
-if true then
-	return {}
-end
-
 return {
 	"ibhagwan/fzf-lua",
 	dependencies = {
@@ -11,12 +7,7 @@ return {
 		{
 			"<Leader>:",
 			function()
-				require("fzf-lua").command_history({
-					winopts = {
-						height = 0.45,
-						width = 0.6,
-					},
-				})
+				require("fzf-lua").command_history()
 			end,
 			desc = "Command history",
 		},
@@ -178,7 +169,10 @@ return {
 				require("fzf-lua").keymaps({
 					winopts = {
 						preview = {
-							border = "rounded",
+							scrollbar = false,
+							layout = "horizontal",
+							horizontal = "right:62%",
+							vertical = "down:62%",
 						},
 					},
 				})
@@ -396,7 +390,9 @@ return {
 		{
 			"z=",
 			function()
-				require("fzf-lua").spell_suggest()
+				require("fzf-lua").spell_suggest({ winopts = {
+					border = "rounded",
+				} })
 			end,
 			desc = "Spell suggest",
 		},
@@ -454,9 +450,10 @@ return {
 			function()
 				require("fzf-lua").complete_path({
 					winopts = {
-						height = 0.5,
-						width = 0.6,
+						height = 0.4,
+						width = 0.3,
 						relative = "cursor",
+						border = "rounded",
 					},
 				})
 			end,
@@ -467,26 +464,30 @@ return {
 	config = function(_, opts)
 		local fzf_lua = require("fzf-lua")
 		fzf_lua.setup(opts or {})
-		fzf_lua.register_ui_select(function(_, _)
-			return { winopts = { height = 0.7, width = 0.5 } }
+		fzf_lua.register_ui_select(function(_, items)
+			local height = math.floor(0.618 * vim.o.lines)
+			local width = math.floor(0.618 * vim.o.columns)
+			local row = math.floor(0.5 * (vim.o.lines - height))
+			local col = math.floor(0.5 * (vim.o.columns - width))
+			return { winopts = { height = height, width = width, row = row, col = col, border = "rounded" } }
 		end)
 	end,
 	opts = {
 		{
-			"default-title",
 			"max-perf",
 			"border-fused",
 			"hide",
 		},
 		winopts = {
-			height = 0.80, -- window height
-			width = 0.75, -- window width
-			row = 0.50, -- window row position (0=top, 1=bottom)
-			col = 0.50, -- window col position (0=left, 1=right)
-			border = "rounded",
+			height = 0.48,
+			width = 1,
+			row = 1,
+			col = 0,
+			border = "border-top",
+			title_pos = "left",
 			preview = {
 				scrollbar = false,
-				layout = "vertical",
+				layout = "flex",
 				horizontal = "right:62%",
 				vertical = "down:62%",
 			},
@@ -494,16 +495,16 @@ return {
 		keymap = {
 			builtin = {
 				true,
-				["<C-d>"] = "preview-page-down",
-				["<C-u>"] = "preview-page-up",
+				["<C-n>"] = "preview-page-down",
+				["<C-p>"] = "preview-page-up",
 				["<C-l>"] = "toggle-preview",
 			},
 			fzf = {
 				true,
-				["ctrl-d"] = "preview-page-down",
-				["ctrl-u"] = "preview-page-up",
-				["ctrl-n"] = "half-page-down",
-				["ctrl-p"] = "half-page-up",
+				["ctrl-n"] = "preview-page-down",
+				["ctrl-p"] = "preview-page-up",
+				["ctrl-d"] = "half-page-down",
+				["ctrl-u"] = "half-page-up",
 				["ctrl-l"] = "toggle-preview",
 				["ctrl-q"] = "select-all+accept",
 			},
