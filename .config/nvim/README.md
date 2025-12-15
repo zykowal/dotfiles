@@ -5,7 +5,8 @@ A minimal Neovim configuration focused on essential development features.
 ## Plugins
 
 ### Code Completion
-- **blink.cmp** - Fast and feature-rich completion engine
+- **blink.cmp** - Fast and feature-rich completion engine (sometimes not work)
+- **nvim-cmp** - Completion plugiN
 
 ### Theme
 - **catppuccin** - Soothing pastel theme for Neovim
