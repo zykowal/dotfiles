@@ -1,3 +1,7 @@
+if true then
+	return {}
+end
+
 return {
 	{
 		"hrsh7th/cmp-nvim-lsp",
