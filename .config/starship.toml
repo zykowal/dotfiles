@@ -1,95 +1,117 @@
-add_newline = false
+format = """\
+[╭╴](fg:arrow)\
+$username\
+$os\
+(\
+    in \
+    $directory\
+)\
+$git_branch\
+$git_commit\
+$git_state\
+$git_metrics\
+$git_status\
+$hg_branch\
+$hg_state\
+$cmd_duration\
+(\
+    $package\
+    $c\
+    $cmake\
+    $cobol\
+    $daml\
+    $dart\
+    $deno\
+    $dotnet\
+    $elixir\
+    $elm\
+    $erlang\
+    $fennel\
+    $fortran\
+    $gleam\
+    $golang\
+    $guix_shell\
+    $haskell\
+    $haxe\
+    $helm\
+    $java\
+    $julia\
+    $kotlin\
+    $gradle\
+    $lua\
+    $nim\
+    $nodejs\
+    $ocaml\
+    $opa\
+    $perl\
+    $php\
+    $pulumi\
+    $purescript\
+    $python\
+    $quarto\
+    $raku\
+    $rlang\
+    $red\
+    $ruby\
+    $rust\
+    $scala\
+    $solidity\
+    $swift\
+    $terraform\
+    $typst\
+    $vlang\
+    $vagrant\
+    $zig\
+    $buf\
+    $nix_shell\
+    $conda\
+    $meson\
+    $spack\
+    $memory_usage\
+    $aws\
+    $gcloud\
+    $openstack\
+    $azure\
+    $nats\
+    $direnv\
+    $env_var\
+)
+[╰─](fg:arrow)$character\
+"""
 
-[aws]
-symbol = "  "
+add_newline = true
 
-[buf]
-symbol = " "
+palette = "normal"
 
-[c]
-symbol = " "
+[palettes.normal]
+arrow = "#a1a1a1"
+os = "#a6e3a1"
+os_admin = "#e4ff1a"
+directory = "#9ffff5"
+time = "#bdfffd"
+node = "#a5e6ba"
+git = "#f17f29"
+git_status = "#DFEBED"
+python = "#edf67d"
+conda = "#70e000"
+java = "#F86279"
+rust = "#ffdac6"
+clang = "#caf0f8"
+duration = "#ce4257"
+text_color = "#EDF2F4"
+text_light = "#26272A"
 
-[conda]
-symbol = " "
+[username]
+style_user = 'bold os'
+style_root = 'bold os_admin'
+format = '[🦊 $user](fg:$style) '
+disabled = false
+show_always = true
 
-[crystal]
-symbol = " "
-
-[dart]
-symbol = " "
-
-[directory]
-read_only = " 󰌾"
-
-[docker_context]
-symbol = " "
-format = 'via [🐋 $context ](blue bold)'
-
-[elixir]
-symbol = " "
-
-[elm]
-symbol = " "
-
-[fennel]
-symbol = " "
-
-[fossil_branch]
-symbol = " "
-
-[git_branch]
-symbol = " "
-
-[golang]
-symbol = '🐹'
-format = 'via [$symbol ($version )($mod_version )]($style)'
-
-[guix_shell]
-symbol = " "
-
-[haskell]
-symbol = " "
-
-[haxe]
-symbol = " "
-
-[hg_branch]
-symbol = " "
-
-[hostname]
-ssh_symbol = " "
-
-[java]
-symbol = '🐛 '
-
-[julia]
-symbol = " "
-
-[kotlin]
-symbol = " "
-
-[lua]
-symbol = " "
-format = 'via [🌕 $version](bold blue) '
-
-[memory_usage]
-symbol = "󰍛 "
-
-[meson]
-symbol = "󰔷 "
-
-[nim]
-symbol = "󰆥 "
-
-[nix_shell]
-symbol = " "
-
-[nodejs]
-symbol = " "
-format = 'via [🤖 $version](bold green) '
-
-[ocaml]
-symbol = " "
+[os]
+format = "on [($name)]($style) "
+style = "bold blue"
+disabled = true
 
 [os.symbols]
 Alpaquita = " "
@@ -97,8 +119,10 @@ Alpine = " "
 AlmaLinux = " "
 Amazon = " "
 Android = " "
+AOSC = " "
 Arch = " "
 Artix = " "
+CachyOS = " "
 CentOS = " "
 Debian = " "
 DragonFly = " "
@@ -120,6 +144,7 @@ MidnightBSD = " "
 Mint = " "
 NetBSD = " "
 NixOS = " "
+Nobara = " "
 OpenBSD = "󰈺 "
 openSUSE = " "
 OracleLinux = "󰌷 "
@@ -135,6 +160,73 @@ Ubuntu = " "
 Unknown = " "
 Void = " "
 Windows = "󰍲 "
+[character]
+success_symbol = "[>](fg:arrow)"
+error_symbol = "[>](fg:red)"
+
+[directory]
+format = "[$path](bold $style)[$read_only]($read_only_style) "
+style = "fg:directory"
+read_only_style = "fg:directory"
+before_repo_root_style = "fg:directory"
+truncate_to_repo = false
+truncation_length = 0
+read_only = "  "
+
+[cmd_duration]
+format = "took [ $duration]($style) "
+style = "bold fg:duration"
+min_time = 500
+
+[docker_context]
+disabled = true
+symbol = " "
+
+[fill]
+symbol = " "
+
+[nodejs]
+format = "[ $symbol$version ]($style)"
+style = "bg:node fg:text_light"
+symbol = " "
+version_format = "${raw}"
+disabled = false
+
+[python]
+disabled = false
+format = '[ ${symbol}${pyenv_prefix}(${version})( \($virtualenv\)) ]($style)'
+symbol = " "
+version_format = "${raw}"
+style = "bg:python fg:text_light"
+
+[conda]
+format = "[ $symbol$environment ]($style)"
+style = "bg:conda fg:text_light"
+ignore_base = false
+disabled = true
+symbol = " "
+
+[java]
+format = "[ $symbol$version ]($style)"
+style = "bg:java fg:text_light"
+version_format = "${raw}"
+symbol = " "
+disabled = true
+
+[c]
+symbol = " "
+
+[cpp]
+disabled = false
+symbol = " "
+format = 'via [$name $version]($style)'
+
+[rust]
+format = "[ $symbol$version ]($style)"
+style = "bg:rust fg:text_light"
+symbol = " "
+version_format = "${raw}"
+disabled = false
 
 [perl]
 symbol = " "
@@ -145,9 +237,8 @@ symbol = " "
 [pijul_channel]
 symbol = " "
 
-[python]
-symbol = "🐍 "
-pyenv_version_name = true
+[pixi]
+symbol = "󰏗 "
 
 [rlang]
 symbol = "󰟔 "
@@ -155,19 +246,35 @@ symbol = "󰟔 "
 [ruby]
 symbol = " "
 
-[rust]
-symbol = "🦀 "
-format = 'via [🦀 $version](red bold)'
-
 [scala]
 symbol = " "
 
 [swift]
 symbol = " "
 
+[xmake]
+symbol = " "
+
 [zig]
 symbol = " "
 
-[character]
-format = '🦊 '
+[julia]
+symbol = " "
 
+[kotlin]
+symbol = " "
+
+[lua]
+symbol = " "
+
+[memory_usage]
+symbol = "󰍛 "
+
+[meson]
+symbol = "󰔷 "
+
+[nim]
+symbol = "󰆥 "
+
+[nix_shell]
+symbol = " "
