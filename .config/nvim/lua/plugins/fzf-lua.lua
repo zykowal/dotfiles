@@ -12,6 +12,20 @@ return {
 			desc = "Command history",
 		},
 		{
+			"<Leader>,",
+			function()
+				require("fzf-lua").live_grep_native()
+			end,
+			desc = "Fuzzy search words",
+		},
+		{
+			"<Leader><Leader>",
+			function()
+				require("fzf-lua").files()
+			end,
+			desc = "Find files",
+		},
+		{
 			"<Leader>f<CR>",
 			function()
 				require("fzf-lua").resume()
