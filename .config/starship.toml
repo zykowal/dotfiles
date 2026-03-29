@@ -92,11 +92,6 @@ time = "#bdfffd"
 node = "#a5e6ba"
 git = "#f17f29"
 git_status = "#DFEBED"
-python = "#edf67d"
-conda = "#70e000"
-java = "#F86279"
-rust = "#ffdac6"
-clang = "#caf0f8"
 duration = "#ce4257"
 text_color = "#EDF2F4"
 text_light = "#26272A"
@@ -186,46 +181,32 @@ symbol = " "
 symbol = " "
 
 [nodejs]
-format = "[ $symbol$version ]($style)"
-style = "bg:node fg:text_light"
 symbol = " "
-version_format = "${raw}"
 disabled = false
 
 [python]
 disabled = false
-format = '[ ${symbol}${pyenv_prefix}(${version})( \($virtualenv\)) ]($style)'
 symbol = " "
-version_format = "${raw}"
-style = "bg:python fg:text_light"
 
 [conda]
-format = "[ $symbol$environment ]($style)"
-style = "bg:conda fg:text_light"
 ignore_base = false
 disabled = true
 symbol = " "
 
 [java]
-format = "[ $symbol$version ]($style)"
-style = "bg:java fg:text_light"
-version_format = "${raw}"
 symbol = " "
-disabled = true
+disabled = false
 
 [c]
 symbol = " "
+disabled = false
 
 [cpp]
 disabled = false
 symbol = " "
-format = 'via [$name $version]($style)'
 
 [rust]
-format = "[ $symbol$version ]($style)"
-style = "bg:rust fg:text_light"
 symbol = " "
-version_format = "${raw}"
 disabled = false
 
 [perl]
