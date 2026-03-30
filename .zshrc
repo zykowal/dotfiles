@@ -3,10 +3,27 @@ skip_global_compinit=1
 autoload -Uz compinit
 compinit -C
 
+bindkey -e
+
+HISTFILE=~/.zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+
+setopt APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_REDUCE_BLANKS
+setopt EXTENDED_HISTORY
+setopt NULL_GLOB
+setopt EXTENDED_GLOB
+setopt GLOB_DOTS
+
 export EDITOR="nvim"
 export VISUAL="nvim"
 
 export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
+
+export BAT_THEME="Catppuccin Mocha"
 
 alias reload-zsh="source ~/.zshrc"
 alias edit-zsh="nvim ~/.zshrc"
@@ -17,9 +34,9 @@ alias cd="z"
 alias ls="eza --icons=always"
 alias v="nvim"
 alias g="lazygit"
+alias ll="ls -la"
 
 eval "$(zoxide init zsh)"
-
 eval "$(starship init zsh)"
 
 eval "$(fzf --zsh)"
@@ -63,11 +80,9 @@ function y() {
 
 SPACESHIP_PROMPT_ASYNC=true
 
-export BAT_THEME="Catppuccin Mocha"
-
-eval "$(mise activate zsh)"
-
-bindkey -e
+export https_proxy="http://127.0.0.1:7890"
+export http_proxy="http://127.0.0.1:7890"
+export all_proxy="socks5://127.0.0.1:7890"
 
 # git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
