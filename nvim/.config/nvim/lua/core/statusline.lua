@@ -179,6 +179,33 @@ local function file_encoding()
   return encoding
 end
 
+local function lsp_label()
+  local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
+  if not get_clients then
+    return ""
+  end
+
+  local clients = get_clients({ bufnr = 0 })
+  if vim.tbl_isempty(clients) then
+    return ""
+  end
+
+  local names = {}
+  local seen = {}
+  for _, client in ipairs(clients) do
+    if client.name and not seen[client.name] then
+      seen[client.name] = true
+      names[#names + 1] = client.name
+    end
+  end
+
+  if vim.tbl_isempty(names) then
+    return ""
+  end
+
+  return " " .. table.concat(names, ", ")
+end
+
 function M.build()
   local parts = {}
 
@@ -209,6 +236,11 @@ function M.build()
   end
 
   parts[#parts + 1] = "%="
+
+  local lsp = lsp_label()
+  if lsp ~= "" then
+    parts[#parts + 1] = section("StatusMeta", lsp)
+  end
 
   local filetype = vim.bo.filetype
   if filetype ~= "" then
