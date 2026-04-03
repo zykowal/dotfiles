@@ -1,0 +1,5 @@
+require("core.autocmds")
+require("core.diagnostics")
+require("core.keymaps")
+require("core.options")
+require("core.statusline")

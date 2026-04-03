@@ -1,0 +1,233 @@
+local M = {}
+
+local NONE = "NONE"
+local fn = vim.fn
+
+local palette = {
+  light_green = "#a9b665",
+  green = "#89b482",
+  pink = "#d3869b",
+  diag_error = "#f38ba8",
+  diag_hint = "#94e2d5",
+  diag_info = "#89dceb",
+  diag_warn = "#f9e2af",
+  git_add = "#a6e3a1",
+  git_change = "#f9e2af",
+  git_delete = "#f38ba8",
+  git_branch = "#c099ff",
+}
+
+local mode_icons = {
+  n = " NORMAL",
+  no = " O-PENDING",
+  nov = " O-PENDING",
+  noV = " O-PENDING",
+  ["no\22"] = " O-PENDING",
+  niI = " NORMAL",
+  niR = " NORMAL",
+  niV = " NORMAL",
+  nt = " NORMAL",
+  v = " VISUAL",
+  V = " V-LINE",
+  ["\22"] = " V-BLOCK",
+  s = " SELECT",
+  S = " S-LINE",
+  ["\19"] = " S-BLOCK",
+  i = " INSERT",
+  ic = " INSERT",
+  ix = " INSERT",
+  R = " REPLACE",
+  Rc = " REPLACE",
+  Rx = " REPLACE",
+  Rv = " V-REPLACE",
+  c = " COMMAND",
+  cv = " VIM EX",
+  ce = " EX",
+  r = " PROMPT",
+  rm = " MORE",
+  ["r?"] = " CONFIRM",
+  ["!"] = " SHELL",
+  t = " TERMINAL",
+}
+
+local function hi(group, opts)
+  vim.api.nvim_set_hl(0, group, opts)
+end
+
+local function set_highlights()
+  hi("StatusLine", { bg = NONE, fg = NONE })
+  hi("StatusLineNC", { bg = NONE, fg = NONE })
+  hi("StatusMode", { bg = NONE, fg = palette.light_green, bold = true })
+  hi("StatusModeSep", { bg = NONE, fg = palette.green })
+
+  hi("StatusGit", { bg = NONE, fg = palette.git_branch, bold = true })
+  hi("StatusGitSep", { bg = NONE, fg = palette.pink })
+  hi("StatusDiffAdd", { bg = NONE, fg = palette.git_add, bold = true })
+  hi("StatusDiffChange", { bg = NONE, fg = palette.git_change, bold = true })
+  hi("StatusDiffDelete", { bg = NONE, fg = palette.git_delete, bold = true })
+
+  hi("StatusFile", { bg = NONE, fg = NONE })
+  hi("StatusFileSep", { bg = NONE, fg = NONE })
+  hi("StatusDiag", { bg = NONE, fg = NONE, bold = true })
+  hi("StatusDiagSep", { bg = NONE, fg = NONE })
+  hi("StatusError", { bg = NONE, fg = palette.diag_error, bold = true })
+  hi("StatusWarn", { bg = NONE, fg = palette.diag_warn, bold = true })
+  hi("StatusInfo", { bg = NONE, fg = palette.diag_info, bold = true })
+  hi("StatusHint", { bg = NONE, fg = palette.diag_hint })
+
+  hi("StatusMeta", { bg = NONE, fg = NONE })
+  hi("StatusLocation", { bg = NONE, fg = NONE })
+  hi("StatusPercent", { bg = NONE, fg = NONE })
+end
+
+local function section(group, text)
+  if text == nil or text == "" then
+    return ""
+  end
+  return "%#" .. group .. "# " .. text .. " "
+end
+
+local function separator(group)
+  return "%#" .. group .. "#"
+end
+
+local function get_git_status()
+  local head = vim.b.gitsigns_head
+  if not head or head == "" then
+    return "", ""
+  end
+
+  local status = vim.b.gitsigns_status_dict or {}
+  local root = status.root and fn.fnamemodify(status.root, ":t") or nil
+  local branch = root and (root .. "/" .. head) or head
+
+  local diff = {}
+  if (status.added or 0) > 0 then
+    diff[#diff + 1] = "%#StatusDiffAdd#+" .. status.added .. " "
+  end
+  if (status.changed or 0) > 0 then
+    diff[#diff + 1] = "%#StatusDiffChange#~" .. status.changed .. " "
+  end
+  if (status.removed or 0) > 0 then
+    diff[#diff + 1] = "%#StatusDiffDelete#-" .. status.removed .. " "
+  end
+
+  return branch, table.concat(diff)
+end
+
+local function get_diagnostics()
+  if not vim.diagnostic then
+    return ""
+  end
+
+  local diagnostics = vim.diagnostic.get(0)
+  if vim.tbl_isempty(diagnostics) then
+    return ""
+  end
+
+  local count = {
+    [vim.diagnostic.severity.ERROR] = 0,
+    [vim.diagnostic.severity.WARN] = 0,
+    [vim.diagnostic.severity.INFO] = 0,
+    [vim.diagnostic.severity.HINT] = 0,
+  }
+
+  for _, item in ipairs(diagnostics) do
+    count[item.severity] = (count[item.severity] or 0) + 1
+  end
+
+  local parts = {}
+  if count[vim.diagnostic.severity.ERROR] > 0 then
+    parts[#parts + 1] = "%#StatusError# " .. count[vim.diagnostic.severity.ERROR] .. " "
+  end
+  if count[vim.diagnostic.severity.WARN] > 0 then
+    parts[#parts + 1] = "%#StatusWarn# " .. count[vim.diagnostic.severity.WARN] .. " "
+  end
+  if count[vim.diagnostic.severity.INFO] > 0 then
+    parts[#parts + 1] = "%#StatusInfo# " .. count[vim.diagnostic.severity.INFO] .. " "
+  end
+  if count[vim.diagnostic.severity.HINT] > 0 then
+    parts[#parts + 1] = "%#StatusHint# " .. count[vim.diagnostic.severity.HINT] .. " "
+  end
+
+  return table.concat(parts)
+end
+
+local function file_label()
+  local filename = fn.expand("%:t")
+  if filename == "" then
+    return ""
+  end
+
+  local parent = fn.expand("%:p:h:t")
+  local label = filename
+  if parent ~= "" and parent ~= "." then
+    label = parent .. "/" .. filename
+  end
+
+  if vim.bo.modified then
+    return label .. "[+]"
+  end
+  return label
+end
+
+local function file_encoding()
+  local encoding = vim.bo.fileencoding
+  if encoding == nil or encoding == "" then
+    encoding = vim.o.encoding
+  end
+  return encoding
+end
+
+function M.build()
+  local parts = {}
+
+  local mode = fn.mode(1)
+  parts[#parts + 1] = section("StatusMode", mode_icons[mode] or mode)
+  parts[#parts + 1] = separator("StatusModeSep")
+
+  local file = file_label()
+  if file ~= "" then
+    parts[#parts + 1] = section("StatusFile", file)
+    parts[#parts + 1] = separator("StatusFileSep")
+  end
+
+  local branch, diff = get_git_status()
+  if branch ~= "" then
+    parts[#parts + 1] = section("StatusGit", " " .. branch)
+    parts[#parts + 1] = separator("StatusGitSep")
+    if diff ~= "" then
+      parts[#parts + 1] = diff
+      parts[#parts + 1] = separator("StatusGitSep")
+    end
+  end
+
+  local diagnostics = get_diagnostics()
+  if diagnostics ~= "" then
+    parts[#parts + 1] = section("StatusDiag", diagnostics)
+    parts[#parts + 1] = separator("StatusDiagSep")
+  end
+
+  parts[#parts + 1] = "%="
+
+  local filetype = vim.bo.filetype
+  if filetype ~= "" then
+    parts[#parts + 1] = section("StatusMeta", filetype)
+  end
+
+  parts[#parts + 1] = section("StatusMeta", file_encoding() .. " " .. vim.bo.fileformat)
+  parts[#parts + 1] = section("StatusLocation", "%l:%c")
+  parts[#parts + 1] = section("StatusPercent", "%p%%")
+
+  return table.concat(parts)
+end
+
+set_highlights()
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = set_highlights,
+})
+
+vim.o.statusline = "%!v:lua.require('core.statusline').build()"
+
+return M

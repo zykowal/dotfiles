@@ -80,10 +80,6 @@ function y() {
 
 SPACESHIP_PROMPT_ASYNC=true
 
-export https_proxy="http://127.0.0.1:7890"
-export http_proxy="http://127.0.0.1:7890"
-export all_proxy="socks5://127.0.0.1:7890"
-
 # git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
 source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 # git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh/zsh-syntax-highlighting
