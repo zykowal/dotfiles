@@ -139,7 +139,7 @@
                                     }
                                 ],
                                 "from": { "key_code": "w" },
-                                "to": [{ "key_code": "down_arrow" }],
+                                "to": [{ "key_code": "left_arrow" }],
                                 "type": "basic"
                             },
                             {
@@ -151,7 +151,7 @@
                                     }
                                 ],
                                 "from": { "key_code": "e" },
-                                "to": [{ "key_code": "up_arrow" }],
+                                "to": [{ "key_code": "down_arrow" }],
                                 "type": "basic"
                             },
                             {
@@ -163,7 +163,7 @@
                                     }
                                 ],
                                 "from": { "key_code": "r" },
-                                "to": [{ "key_code": "left_arrow" }],
+                                "to": [{ "key_code": "up_arrow" }],
                                 "type": "basic"
                             },
                             {
