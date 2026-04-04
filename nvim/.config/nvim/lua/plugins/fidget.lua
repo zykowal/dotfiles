@@ -182,6 +182,10 @@ local function open()
 	fzf.fzf_exec(lines, {
 		prompt = "> ",
 		previewer = previewer(entries),
+		fzf_opts = {
+			["--delimiter"] = "\t",
+			["--with-nth"] = "2..",
+		},
 	})
 end
 
