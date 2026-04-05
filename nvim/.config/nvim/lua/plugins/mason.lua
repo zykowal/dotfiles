@@ -12,7 +12,52 @@ require("mason").setup({
 local map = vim.keymap.set
 
 map("n", "<leader>pm", "<cmd>Mason<CR>", { desc = "Mason" })
-map("n", "<leader>le", ":<C-u>lsp enable ", { desc = "Enable LSP" })
+-- map("n", "<leader>le", ":<C-u>lsp enable ", { desc = "Enable LSP" })
+
+-- Enable LSP
+local lsp_mappings = {
+    ['lua-language-server'] = 'lua_ls',
+}
+
+vim.keymap.set('n', '<leader>le', function()
+  local mason_registry = require('mason-registry')
+
+  if not mason_registry then
+    vim.notify("Mason not loaded yet", vim.log.levels.WARN)
+    return
+  end
+
+  local installed_lsp_servers = mason_registry.get_installed_package_names()
+
+  if vim.fn.executable("rust-analyzer") == 1 then
+    installed_lsp_servers[#installed_lsp_servers + 1] = "rust_analyzer"
+  end
+
+  if vim.tbl_isempty(installed_lsp_servers) then
+    vim.notify("No LSP servers installed via Mason", vim.log.levels.WARN)
+    return
+  end
+
+  vim.ui.select(installed_lsp_servers, {
+    prompt = "LSP server to start: ",
+  }, function(choice)
+    if not choice then
+      return
+    end
+
+    local clients = vim.lsp.get_clients({ name = choice })
+    if #clients > 0 then
+      vim.notify(choice .. " is already running", vim.log.levels.INFO)
+      return
+    end
+
+    if lsp_mappings[choice] then
+      choice = lsp_mappings[choice]
+    end
+    vim.notify("Starting " .. choice .. " server", vim.log.levels.INFO)
+    vim.cmd("lsp enable " .. choice)
+  end)
+end, { desc = "Enable LSP" })
 
 local capabilities = require("blink.cmp").get_lsp_capabilities()
 
