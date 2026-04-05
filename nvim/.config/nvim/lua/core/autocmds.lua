@@ -14,3 +14,14 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
+vim.api.nvim_create_autocmd({ "BufEnter", "BufRead" }, {
+    pattern = "*",
+    callback = function()
+        vim.fn.matchadd("Question", [[\<TODO\>]])
+        vim.fn.matchadd("OkMsg", [[\<NOTE\>]])
+        vim.fn.matchadd("ErrorMsg", [[\<FIXME\>]])
+        vim.fn.matchadd("ErrorMsg", [[\<BUG\>]])
+        vim.fn.matchadd("DiagnosticWarn", [[\<PERF\>]])
+        vim.fn.matchadd("DiagnosticWarn", [[\<OPTIMIZE\>]])
+    end,
+})
