@@ -30,6 +30,7 @@ local mode_icons = {
   v = " VISUAL",
   V = " V-LINE",
   ["\22"] = " V-BLOCK",
+  ["\22s"] = " V-BLOCK",
   s = " SELECT",
   S = " S-LINE",
   ["\19"] = " S-BLOCK",
