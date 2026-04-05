@@ -1,3 +1,4 @@
+require("plugins.icons")
 require("plugins.fzf")
 require("plugins.fidget")
 require("plugins.blink")

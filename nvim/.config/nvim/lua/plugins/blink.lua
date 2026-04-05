@@ -33,6 +33,7 @@ require("blink.cmp").setup({
 
   appearance = {
     nerd_font_variant = "normal",
+    kind_icons = require("plugins.icons").symbol_icons,
   },
 
   completion = {
@@ -45,7 +46,7 @@ require("blink.cmp").setup({
       scrollbar = false,
       draw = {
         treesitter = { "lsp" },
-        columns = { { "label", "label_description", gap = 1 }, { "kind" } },
+        columns = { { "label", "label_description", gap = 1 }, { "kind_icon", "kind" } },
       },
     },
     documentation = {
