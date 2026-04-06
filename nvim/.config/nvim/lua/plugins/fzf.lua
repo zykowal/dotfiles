@@ -288,11 +288,11 @@ map("n", "<leader>fQ", function()
 end, { desc = "Find quickfix stack" })
 
 map("n", "<leader>ft", function()
-  fzf.tags_live_grep()
-end, { desc = "Find tags" })
+  fzf.tabs()
+end, { desc = "Find tabs" })
 
-map("v", "<leader>ft", function()
-  fzf.tags_grep_visual()
+map("n", "<leader>fL", function()
+  fzf.tags_live_grep()
 end, { desc = "Find tags" })
 
 map("n", "<leader>fl", function()
