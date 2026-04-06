@@ -29,7 +29,7 @@ opt.shortmess = vim.tbl_deep_extend("force", vim.opt.shortmess:get(), { s = true
 opt.showmode = false                                                                                               -- disable showing modes in command line
 opt.signcolumn = "yes"                                                                                             -- always show the sign column
 opt.smartcase = true                                                                                               -- case sensitive searching
-opt.hlsearch = false                                                                                               -- Don't highlight search results
+opt.hlsearch = true                                                                                                -- highlight search results
 opt.smarttab = true                                                                                                -- Smart tab
 opt.smartindent = true                                                                                             -- Make indenting smart
 opt.splitbelow = true                                                                                              -- splitting a new window below the current one

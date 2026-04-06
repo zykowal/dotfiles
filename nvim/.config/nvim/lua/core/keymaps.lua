@@ -15,9 +15,9 @@ vim.keymap.set("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = tr
 vim.keymap.set("x", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true, desc = "Move cursor down" })
 vim.keymap.set("n", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true, desc = "Move cursor up" })
 vim.keymap.set("x", "k", "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true, desc = "Move cursor up" })
-vim.keymap.set("n", "<Leader>w", "<Cmd>w<CR>", { desc = "Save" })
-vim.keymap.set("n", "<Leader>q", "<Cmd>confirm q<CR>", { desc = "Quit Window" })
-vim.keymap.set("n", "<Leader>Q", "<Cmd>confirm qall<CR>", { desc = "Exit Window" })
+vim.keymap.set("n", "<leader>w", "<Cmd>w<CR>", { desc = "Save" })
+vim.keymap.set("n", "<leader>q", "<Cmd>confirm q<CR>", { desc = "Quit Window" })
+vim.keymap.set("n", "<leader>Q", "<Cmd>confirm qall<CR>", { desc = "Exit Window" })
 vim.keymap.set("n", "|", "<Cmd>vsplit<CR>", { desc = "Vertical Split" })
 vim.keymap.set("n", "\\", "<Cmd>split<CR>", { desc = "Horizontal Split" })
 
@@ -33,7 +33,7 @@ vim.keymap.set("n", "<C-Right>", "<Cmd>vertical resize +2<CR>", { desc = "Resize
 vim.keymap.set("n", "n", "'Nn'[v:searchforward].'zv'", { expr = true, desc = "Next Search Result" })
 vim.keymap.set("n", "N", "'nN'[v:searchforward].'zv'", { expr = true, desc = "Prev Search Result" })
 
-vim.keymap.set("v", "p", '"_dP', opts)
+vim.keymap.set("v", "p", '"_dP', { noremap = true, silent = true })
 
 vim.keymap.set("i", "'", "''<left>")
 vim.keymap.set("i", "`", "``<left>")
@@ -43,8 +43,10 @@ vim.keymap.set("i", "[", "[]<left>")
 vim.keymap.set("i", "{", "{}<left>")
 vim.keymap.set("i", "<", "<><left>")
 
-vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
+vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+
+vim.keymap.set("n", "<leader>;", "q:", { desc = "Command line" })
 
 vim.keymap.del({ "n", "x" }, "gra", { silent = true })
 vim.keymap.del("n", "grx", { silent = true })
