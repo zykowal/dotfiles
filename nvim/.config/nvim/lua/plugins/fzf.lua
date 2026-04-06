@@ -243,9 +243,7 @@ map("n", "<leader>lS", function()
   fzf.lsp_live_workspace_symbols()
 end, { desc = "Search workspace symbols" })
 
-map("n", "<leader>:", function()
-  fzf.command_history()
-end, { desc = "Command history" })
+map("n", "<leader>:", "q:", { desc = "Command history" })
 
 map("n", "<leader>,", function()
   fzf.live_grep_native()
