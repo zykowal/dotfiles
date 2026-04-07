@@ -108,7 +108,7 @@ map("n", "gH", function()
 end, { desc = "Show supertypes" })
 
 map("n", "gr", function()
-  local clients = vim.lsp.get_clients({ bufnr = 0 })
+  local clients = vim.lsp.get_clients({ bufnr = 0, method = "textDocument/references" })
   if #clients > 0 then
     fzf.lsp_references()
   else
