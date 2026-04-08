@@ -47,6 +47,7 @@ vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highl
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 
 vim.keymap.set("n", "<leader>;", "q:", { desc = "Command line" })
+vim.keymap.set("n", "<leader>c", "<cmd>bdelete<CR>", { desc = "Close buffer" })
 
 vim.keymap.del({ "n", "x" }, "gra", { silent = true })
 vim.keymap.del("n", "grx", { silent = true })
