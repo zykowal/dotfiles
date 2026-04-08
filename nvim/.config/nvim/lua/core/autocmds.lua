@@ -28,7 +28,7 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufRead" }, {
 
 vim.api.nvim_create_autocmd("FileType", {
   pattern = {
-    "help", "vim", "checkhealth", "qf"
+    "help", "vim", "checkhealth", "qf", "gitsigns-blame"
   },
   callback = function(event)
     vim.keymap.set("n", "q", function()
