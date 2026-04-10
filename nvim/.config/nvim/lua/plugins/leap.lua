@@ -7,9 +7,36 @@ leap.opts.on_beacons = function(targets, _, _)
   end
 end
 
-vim.keymap.set({'n', 'x', 'o'}, 's', '<Plug>(leap-anywhere)', { desc = 'Leap' })
+do
+  local function ft(key_specific_args)
+    require('leap').leap(
+      vim.tbl_deep_extend('keep', key_specific_args, {
+        inputlen = 1,
+        inclusive = true,
+        opts = {
+          labels = 'sfnjklhodweimburgtaqpz/?',
+          safe_labels = vim.fn.mode(1):match('o') and '' or nil,
+        },
+      })
+    )
+  end
+
+  local clever = require('leap.user').with_traversal_keys
+  local clever_f, clever_t = clever('f', 'F'), clever('t', 'T')
+
+  vim.keymap.set({ 'n', 'x', 'o' }, 'f', function()
+    ft { opts = clever_f }
+  end)
+  vim.keymap.set({ 'n', 'x', 'o' }, 'F', function()
+    ft { backward = true, opts = clever_f }
+  end)
+  vim.keymap.set({ 'n', 'x', 'o' }, 't', function()
+    ft { offset = -1, opts = clever_t }
+  end)
+  vim.keymap.set({ 'n', 'x', 'o' }, 'T', function()
+    ft { backward = true, offset = 1, opts = clever_t }
+  end)
+end
+
+vim.keymap.set({'n', 'x', 'o'}, 's', '<Plug>(leap)', { desc = 'Leap' })
 vim.keymap.set({'n', 'x', 'o'}, 'S', function() require("leap.remote").action() end, { desc = 'Leap remote' })
-vim.keymap.set({'n', 'x', 'o'}, 'f', '<Plug>(leap-forward)')
-vim.keymap.set({'n', 'x', 'o'}, 'F', '<Plug>(leap-backward)')
-vim.keymap.set({'n', 'x', 'o'}, 't', '<Plug>(leap-forward-till)')
-vim.keymap.set({'n', 'x', 'o'}, 'T', '<Plug>(leap-backward-till)')
