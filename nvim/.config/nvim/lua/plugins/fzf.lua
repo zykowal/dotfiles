@@ -71,7 +71,7 @@ fzf.setup({
 
 fzf.register_ui_select()
 
-map("n", "<leader><leader>", function()
+map("n", "<c-f>", function()
   fzf.files()
 end, { desc = "Find files" })
 
