@@ -1,6 +1,6 @@
 require("plugins.icons")
 require("plugins.fzf")
-require("plugins.fidget")
+require("plugins.noice")
 require("plugins.blink")
 require("plugins.mason")
 require("plugins.conform")

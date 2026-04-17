@@ -17,10 +17,11 @@ vim.pack.add({
 	{ src = gh("stevearc/oil.nvim") },
 	{ src = gh("lewis6991/gitsigns.nvim") },
 	{ src = gh("stevearc/conform.nvim") },
-	{ src = gh("j-hui/fidget.nvim") },
 	{ src = gh("christoomey/vim-tmux-navigator") },
 	{ src = gh("catppuccin/nvim") },
 	{ src = gh("supermaven-inc/supermaven-nvim") },
+	{ src = gh("folke/noice.nvim") },
+	{ src = gh("MunifTanjim/nui.nvim") },
 	{ src = cb("andyg/leap.nvim") },
 }, { confirm = false })
 

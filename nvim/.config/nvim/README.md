@@ -10,7 +10,7 @@ Minimal Neovim v0.12 config that lives next to your current setup.
 - `nvim-lspconfig`
 - `conform.nvim`
 - `gitsigns.nvim`
-- `fidget.nvim`
+- `noice.nvim`
 - `catppuccin`
 - `vim-tmux-navigator`
 - `oil.nvim`
