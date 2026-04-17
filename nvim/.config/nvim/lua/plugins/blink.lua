@@ -59,7 +59,7 @@ require("blink.cmp").setup({
     },
   },
   signature = {
-    enabled = true,
+    enabled = false,
     window = {
       border = "none",
       show_documentation = true,
