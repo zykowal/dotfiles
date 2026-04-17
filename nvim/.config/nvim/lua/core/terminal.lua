@@ -5,7 +5,7 @@ end
 local terminal_state = create_float_state()
 local git_state = create_float_state()
 
-local function open_float(buf, border)
+local function open_float(buf)
   buf = vim.api.nvim_buf_is_valid(buf) and buf or vim.api.nvim_create_buf(false, true)
   local width = vim.o.columns
   local height = vim.o.lines
@@ -23,7 +23,7 @@ local function open_float(buf, border)
     row = row,
     col = col,
     style = "minimal",
-    border = border,
+    border = "none",
   }
 
   return {
@@ -36,8 +36,8 @@ local function is_terminal_buffer(buf)
   return vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "terminal"
 end
 
-local function ensure_terminal_float(state, open_cmd, border)
-  local float = open_float(state.buf, border)
+local function ensure_terminal_float(state, open_cmd, direction)
+  local float = open_float(state.buf)
   state.buf = float.buf
   state.win = float.win
 
@@ -46,6 +46,12 @@ local function ensure_terminal_float(state, open_cmd, border)
   end
 
   vim.cmd.startinsert()
+  if direction == "up" then
+    vim.cmd("wincmd K")
+  end
+  if direction == "right" then
+    vim.cmd("wincmd L")
+  end
 end
 
 vim.keymap.set({ "n", "t" }, "<C-s>", function()
@@ -54,7 +60,16 @@ vim.keymap.set({ "n", "t" }, "<C-s>", function()
     return
   end
 
-  ensure_terminal_float(terminal_state, vim.cmd.terminal, "rounded")
+  ensure_terminal_float(terminal_state, vim.cmd.terminal, "up")
+end, { desc = "Term" })
+
+vim.keymap.set({ "n", "t" }, "<C-y>", function()
+  if vim.api.nvim_win_is_valid(terminal_state.win) then
+    vim.api.nvim_win_hide(terminal_state.win)
+    return
+  end
+
+  ensure_terminal_float(terminal_state, vim.cmd.terminal, "right")
 end, { desc = "Term" })
 
 vim.keymap.set("n", "<leader>gg", function()
@@ -80,5 +95,5 @@ vim.keymap.set("n", "<leader>gg", function()
         git_state.win = -1
       end,
     })
-  end, "none")
+  end, "float")
 end, { desc = "Lazygit" })
