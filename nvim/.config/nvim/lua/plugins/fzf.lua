@@ -72,7 +72,7 @@ fzf.setup({
 fzf.register_ui_select()
 
 map("n", "<c-f>", function()
-  fzf.files()
+  fzf.files({ hidden = true, no_ignore = true })
 end, { desc = "Find files" })
 
 map("n", "<leader>/", function()
