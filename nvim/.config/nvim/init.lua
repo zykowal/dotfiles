@@ -22,6 +22,9 @@ vim.pack.add({
 	{ src = gh("supermaven-inc/supermaven-nvim") },
 	{ src = gh("folke/noice.nvim") },
 	{ src = gh("MunifTanjim/nui.nvim") },
+	{ src = gh("kylechui/nvim-surround") },
+	{ src = gh("windwp/nvim-autopairs") },
+	{ src = gh("nvim-mini/mini.ai") },
 	{ src = cb("andyg/leap.nvim") },
 }, { confirm = false })
 

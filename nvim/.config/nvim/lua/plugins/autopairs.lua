@@ -1,0 +1,4 @@
+require("nvim-autopairs").setup({
+  disable_filetype = { "TelescopePrompt", "spectre_panel" },
+  check_ts = false,
+})

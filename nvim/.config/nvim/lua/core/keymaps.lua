@@ -35,14 +35,6 @@ vim.keymap.set("n", "N", "'nN'[v:searchforward].'zv'", { expr = true, desc = "Pr
 
 vim.keymap.set("v", "p", '"_dP', { noremap = true, silent = true })
 
-vim.keymap.set("i", "'", "''<left>")
-vim.keymap.set("i", "`", "``<left>")
-vim.keymap.set("i", '"', '""<left>')
-vim.keymap.set("i", "(", "()<left>")
-vim.keymap.set("i", "[", "[]<left>")
-vim.keymap.set("i", "{", "{}<left>")
-vim.keymap.set("i", "<", "<><left>")
-
 vim.keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>", { desc = "Clear search highlight" })
 vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 

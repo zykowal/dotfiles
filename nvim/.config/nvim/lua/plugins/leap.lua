@@ -38,5 +38,5 @@ do
   end)
 end
 
-vim.keymap.set({'n', 'x', 'o'}, 's', '<Plug>(leap-anywhere)', { desc = 'Leap' })
+vim.keymap.set({'n', 'x', 'o'}, 's', '<Plug>(leap)', { desc = 'Leap' })
 vim.keymap.set({'n', 'x', 'o'}, 'S', function() require("leap.remote").action() end, { desc = 'Leap remote' })
