@@ -2,6 +2,7 @@
 local map = vim.keymap.set
 
 vim.diagnostic.config({
+  underline = true,
   update_in_insert = false,
   severity_sort = true,
   float = {
@@ -10,11 +11,10 @@ vim.diagnostic.config({
     header = "",
     prefix = "",
   },
-  underline = { severity = { min = vim.diagnostic.severity.WARN } },
 
   virtual_text = {
     prefix = "●",
-    severity = { min = vim.diagnostic.severity.HINT },
+    source = "if_many",
   },
   virtual_lines = false,
 
