@@ -45,15 +45,14 @@ vim.keymap.set('n', '<leader>le', function()
       return
     end
 
+    choice = lsp_mappings[choice] or choice
+
     local clients = vim.lsp.get_clients({ name = choice })
     if #clients > 0 then
       vim.notify(choice .. " is already running", vim.log.levels.INFO)
       return
     end
 
-    if lsp_mappings[choice] then
-      choice = lsp_mappings[choice]
-    end
     vim.notify("Starting " .. choice .. " server", vim.log.levels.INFO)
     vim.cmd("lsp enable " .. choice)
   end)
