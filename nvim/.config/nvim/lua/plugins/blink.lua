@@ -7,9 +7,11 @@ require("blink.cmp").setup({
     ["<C-P>"] = { "select_prev", "show" },
     ["<C-J>"] = { "select_next", "fallback" },
     ["<C-K>"] = { "select_prev", "fallback" },
-    ["<C-U>"] = { "scroll_documentation_up", "fallback" },
-    ["<C-D>"] = { "scroll_documentation_down", "fallback" },
-    ["<C-e>"] = { "hide", "fallback" },
+    ["<C-U>"] = { function(cmp) return cmp.select_prev({ count = 5 }) end, "fallback" },
+    ["<C-D>"] = { function(cmp) return cmp.select_next({ count = 5 }) end, "fallback" },
+    ["<C-B>"] = { "scroll_documentation_up", "fallback" },
+    ["<C-F>"] = { "scroll_documentation_down", "fallback" },
+    ["<C-E>"] = { "hide", "fallback" },
     ["<CR>"] = { "accept", "fallback" },
     ["<C-l>"] = { "accept", "fallback" },
   },
@@ -51,7 +53,7 @@ require("blink.cmp").setup({
     },
     documentation = {
       auto_show = true,
-      auto_show_delay_ms = 0,
+      auto_show_delay_ms = 50,
       window = {
         border = "rounded",
         scrollbar = false,
