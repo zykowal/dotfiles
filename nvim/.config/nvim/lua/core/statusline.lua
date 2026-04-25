@@ -2,6 +2,7 @@ local M = {}
 
 local NONE = "NONE"
 local fn = vim.fn
+local api = vim.api
 
 local palette = {
   light_green = "#a9b665",
@@ -52,7 +53,7 @@ local mode_icons = {
 }
 
 local function hi(group, opts)
-  vim.api.nvim_set_hl(0, group, opts)
+  api.nvim_set_hl(0, group, opts)
 end
 
 local function set_highlights()
@@ -92,38 +93,28 @@ local function separator(group)
   return "%#" .. group .. "#"
 end
 
-local function get_git_status()
-  local head = vim.b.gitsigns_head
-  if not head or head == "" then
-    return "", ""
+local function set_buf_cache(bufnr, key, value)
+  if api.nvim_buf_is_valid(bufnr) then
+    vim.b[bufnr][key] = value
   end
-
-  local status = vim.b.gitsigns_status_dict or {}
-  local root = status.root and fn.fnamemodify(status.root, ":t") or nil
-  local branch = root and (root .. "/" .. head) or head
-
-  local diff = {}
-  if (status.added or 0) > 0 then
-    diff[#diff + 1] = "%#StatusDiffAdd#+" .. status.added .. " "
-  end
-  if (status.changed or 0) > 0 then
-    diff[#diff + 1] = "%#StatusDiffChange#~" .. status.changed .. " "
-  end
-  if (status.removed or 0) > 0 then
-    diff[#diff + 1] = "%#StatusDiffDelete#-" .. status.removed .. " "
-  end
-
-  return branch, table.concat(diff)
 end
 
-local function get_diagnostics()
-  if not vim.diagnostic then
+local function get_buf_cache(bufnr, key)
+  if not api.nvim_buf_is_valid(bufnr) then
     return ""
   end
+  return vim.b[bufnr][key] or ""
+end
 
-  local diagnostics = vim.diagnostic.get(0)
+local function update_diagnostics(bufnr)
+  if not vim.diagnostic or not api.nvim_buf_is_valid(bufnr) then
+    return
+  end
+
+  local diagnostics = vim.diagnostic.get(bufnr)
   if vim.tbl_isempty(diagnostics) then
-    return ""
+    set_buf_cache(bufnr, "statusline_diagnostics", "")
+    return
   end
 
   local count = {
@@ -151,7 +142,64 @@ local function get_diagnostics()
     parts[#parts + 1] = "%#StatusHint# " .. count[vim.diagnostic.severity.HINT] .. " "
   end
 
-  return table.concat(parts)
+  set_buf_cache(bufnr, "statusline_diagnostics", table.concat(parts))
+end
+
+local function update_lsp(bufnr)
+  local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
+  if not get_clients or not api.nvim_buf_is_valid(bufnr) then
+    return
+  end
+
+  local clients = get_clients({ bufnr = bufnr })
+  if vim.tbl_isempty(clients) then
+    set_buf_cache(bufnr, "statusline_lsp", "")
+    return
+  end
+
+  local names = {}
+  local seen = {}
+  for _, client in ipairs(clients) do
+    if client.name and not seen[client.name] then
+      seen[client.name] = true
+      names[#names + 1] = client.name
+    end
+  end
+
+  if vim.tbl_isempty(names) then
+    set_buf_cache(bufnr, "statusline_lsp", "")
+    return
+  end
+
+  set_buf_cache(bufnr, "statusline_lsp", " " .. table.concat(names, ", "))
+end
+
+local function get_git_status()
+  local head = vim.b.gitsigns_head
+  if not head or head == "" then
+    return "", ""
+  end
+
+  local status = vim.b.gitsigns_status_dict or {}
+  local root = status.root and fn.fnamemodify(status.root, ":t") or nil
+  local branch = root and (root .. "/" .. head) or head
+
+  local diff = {}
+  if (status.added or 0) > 0 then
+    diff[#diff + 1] = "%#StatusDiffAdd#+" .. status.added .. " "
+  end
+  if (status.changed or 0) > 0 then
+    diff[#diff + 1] = "%#StatusDiffChange#~" .. status.changed .. " "
+  end
+  if (status.removed or 0) > 0 then
+    diff[#diff + 1] = "%#StatusDiffDelete#-" .. status.removed .. " "
+  end
+
+  return branch, table.concat(diff)
+end
+
+local function get_diagnostics()
+  return get_buf_cache(api.nvim_get_current_buf(), "statusline_diagnostics")
 end
 
 local function file_label()
@@ -181,30 +229,7 @@ local function file_encoding()
 end
 
 local function lsp_label()
-  local get_clients = vim.lsp.get_clients or vim.lsp.get_active_clients
-  if not get_clients then
-    return ""
-  end
-
-  local clients = get_clients({ bufnr = 0 })
-  if vim.tbl_isempty(clients) then
-    return ""
-  end
-
-  local names = {}
-  local seen = {}
-  for _, client in ipairs(clients) do
-    if client.name and not seen[client.name] then
-      seen[client.name] = true
-      names[#names + 1] = client.name
-    end
-  end
-
-  if vim.tbl_isempty(names) then
-    return ""
-  end
-
-  return " " .. table.concat(names, ", ")
+  return get_buf_cache(api.nvim_get_current_buf(), "statusline_lsp")
 end
 
 function M.build()
@@ -257,10 +282,45 @@ end
 
 set_highlights()
 
-vim.api.nvim_create_autocmd("ColorScheme", {
+local statusline_group = api.nvim_create_augroup("UserStatuslineCache", { clear = true })
+
+api.nvim_create_autocmd("ColorScheme", {
   callback = set_highlights,
 })
 
-vim.o.statusline = "%!v:lua.require('core.statusline').build()"
+api.nvim_create_autocmd({ "DiagnosticChanged", "BufEnter" }, {
+  group = statusline_group,
+  callback = function(args)
+    update_diagnostics(args.buf)
+  end,
+})
+
+api.nvim_create_autocmd({ "LspAttach", "LspDetach", "BufEnter" }, {
+  group = statusline_group,
+  callback = function(args)
+    update_lsp(args.buf)
+  end,
+})
+
+api.nvim_create_autocmd("BufDelete", {
+  group = statusline_group,
+  callback = function(args)
+    vim.b[args.buf].statusline_diagnostics = nil
+    vim.b[args.buf].statusline_lsp = nil
+  end,
+})
+
+for _, bufnr in ipairs(api.nvim_list_bufs()) do
+  if api.nvim_buf_is_loaded(bufnr) then
+    update_diagnostics(bufnr)
+    update_lsp(bufnr)
+  end
+end
+
+_G.StatuslineBuild = function()
+  return require("core.statusline").build()
+end
+
+vim.o.statusline = "%!v:lua.StatuslineBuild()"
 
 return M
