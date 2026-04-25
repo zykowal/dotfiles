@@ -7,7 +7,7 @@ local gh = function(repo)
 	return "https://github.com/" .. repo
 end
 
-local cb = function(repo) 
+local cb = function(repo)
   return 'https://codeberg.org/' .. repo
 end
 
