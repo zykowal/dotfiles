@@ -5,18 +5,14 @@ vim.diagnostic.config({
   underline = true,
   update_in_insert = false,
   severity_sort = true,
+  virtual_text = false,
+  virtual_lines = false,
   float = {
     border = "rounded",
     source = "if_many",
     header = "",
     prefix = "",
   },
-
-  virtual_text = {
-    prefix = "●",
-    source = "if_many",
-  },
-  virtual_lines = false,
 
   signs = {
     text = {
