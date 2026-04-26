@@ -11,20 +11,7 @@ require("mason").setup({
 
 local map = vim.keymap.set
 
-local lsp_attach_group = vim.api.nvim_create_augroup("UserLspAttach", { clear = true })
-local lsp_highlight_group = vim.api.nvim_create_augroup("UserLspDocumentHighlight", { clear = true })
-
 map("n", "<leader>pm", "<cmd>Mason<CR>", { desc = "Mason" })
-
-local function has_other_client(bufnr, method, client_id)
-  for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr, method = method })) do
-    if client.id ~= client_id then
-      return true
-    end
-  end
-
-  return false
-end
 
 local function current_client_names(bufnr)
   local names = {}
@@ -154,7 +141,7 @@ vim.lsp.config("*", {
 })
 
 vim.api.nvim_create_autocmd("LspAttach", {
-  group = lsp_attach_group,
+  group = vim.api.nvim_create_augroup("UserLspAttach", { clear = true }),
   callback = function(args)
     local client = vim.lsp.get_client_by_id(args.data.client_id)
     if not client then
@@ -181,37 +168,8 @@ vim.api.nvim_create_autocmd("LspAttach", {
       vim.lsp.semantic_tokens.enable(not vim.lsp.semantic_tokens.is_enabled({ bufnr = args.buf }), { bufnr = args.buf })
     end, vim.tbl_extend("force", opts, { desc = "Toggle semantic tokens" }))
 
-    -- if client and client:supports_method("textDocument/documentHighlight", args.buf) then
-    --   vim.api.nvim_clear_autocmds({ group = lsp_highlight_group, buffer = args.buf })
-    --
-    --   vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
-    --     group = lsp_highlight_group,
-    --     buffer = args.buf,
-    --     callback = vim.lsp.buf.document_highlight,
-    --   })
-    --
-    --   vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-    --     group = lsp_highlight_group,
-    --     buffer = args.buf,
-    --     callback = vim.lsp.buf.clear_references,
-    --   })
-    -- end
   end,
 })
-
--- vim.api.nvim_create_autocmd("LspDetach", {
---   group = lsp_attach_group,
---   callback = function(args)
---     if not args.data or not args.data.client_id then
---       return
---     end
---
---     if not has_other_client(args.buf, "textDocument/documentHighlight", args.data.client_id) then
---       vim.api.nvim_clear_autocmds({ group = lsp_highlight_group, buffer = args.buf })
---       pcall(vim.api.nvim_buf_call, args.buf, vim.lsp.buf.clear_references)
---     end
---   end,
--- })
 
 -- C/C++
 vim.lsp.config("clangd", {
