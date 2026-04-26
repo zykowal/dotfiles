@@ -41,6 +41,10 @@ vim.keymap.set("t", "<Esc><Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" }
 vim.keymap.set("n", "<leader>;", "q:", { desc = "Command line" })
 vim.keymap.set("n", "<leader>c", "<cmd>bdelete<CR>", { desc = "Close buffer" })
 
+vim.keymap.set("n", "<C-q>", "<cmd>:copen<CR>", { desc = "Open quickfix list" })
+vim.keymap.set("n", "<leader>lq", function() vim.diagnostic.setqflist() end, { desc = "Open qflist" })
+vim.keymap.set("n", "<leader>ll", function() vim.diagnostic.setloclist() end, { desc = "Open loclist" })
+
 vim.keymap.del({ "n", "x" }, "gra", { silent = true })
 vim.keymap.del("n", "grx", { silent = true })
 vim.keymap.del("n", "gri", { silent = true })

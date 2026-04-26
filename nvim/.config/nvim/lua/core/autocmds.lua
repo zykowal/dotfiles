@@ -14,26 +14,24 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
-vim.api.nvim_create_autocmd({ "BufEnter", "BufRead" }, {
-  pattern = "*",
-  callback = function()
-    vim.fn.matchadd("Question", [[TODO:]])
-    vim.fn.matchadd("OkMsg", [[NOTE:]])
-    vim.fn.matchadd("ErrorMsg", [[FIXME:]])
-    vim.fn.matchadd("ErrorMsg", [[BUG:]])
-    vim.fn.matchadd("DiagnosticWarn", [[PERF:]])
-    vim.fn.matchadd("DiagnosticWarn", [[OPTIMIZE:]])
-  end,
-})
-
 vim.api.nvim_create_autocmd("FileType", {
   pattern = {
-    "help", "vim", "checkhealth", "qf", "gitsigns-blame"
+    "help", "vim", "checkhealth", "gitsigns-blame"
   },
   callback = function(event)
     vim.keymap.set("n", "q", function()
       vim.cmd("close")
     end, { buffer = event.buf, silent = true })
   end,
+})
 
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'qf',
+  callback = function()
+    local opts = { buffer = true, silent = true }
+    vim.keymap.set('n', 'o', '<CR>', opts)
+    vim.keymap.set('n', 'q', function () vim.cmd("close") end, opts)
+    vim.keymap.set('n', '>', '<C-w>+', opts)
+    vim.keymap.set('n', '<', '<C-w>-', opts)
+  end,
 })
