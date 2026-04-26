@@ -8,6 +8,11 @@ local palette = {
   light_green = "#a9b665",
   green = "#89b482",
   pink = "#d3869b",
+  blue = "#7daea3",
+  yellow = "#d8a657",
+  orange = "#e78a4e",
+  red = "#ea6962",
+  aqua = "#7fb4ca",
   diag_error = "#f38ba8",
   diag_hint = "#94e2d5",
   diag_info = "#89dceb",
@@ -56,10 +61,56 @@ local function hi(group, opts)
   api.nvim_set_hl(0, group, opts)
 end
 
+local mode_highlight_map = {
+  n = "StatusModeNormal",
+  no = "StatusModeNormal",
+  nov = "StatusModeNormal",
+  noV = "StatusModeNormal",
+  ["no\22"] = "StatusModeNormal",
+  niI = "StatusModeNormal",
+  niR = "StatusModeNormal",
+  niV = "StatusModeNormal",
+  nt = "StatusModeNormal",
+  v = "StatusModeVisual",
+  V = "StatusModeVisual",
+  ["\22"] = "StatusModeVisual",
+  ["\22s"] = "StatusModeVisual",
+  s = "StatusModeSelect",
+  S = "StatusModeSelect",
+  ["\19"] = "StatusModeSelect",
+  i = "StatusModeInsert",
+  ic = "StatusModeInsert",
+  ix = "StatusModeInsert",
+  R = "StatusModeReplace",
+  Rc = "StatusModeReplace",
+  Rx = "StatusModeReplace",
+  Rv = "StatusModeReplace",
+  c = "StatusModeCommand",
+  cv = "StatusModeCommand",
+  ce = "StatusModeCommand",
+  r = "StatusModePrompt",
+  rm = "StatusModePrompt",
+  ["r?"] = "StatusModePrompt",
+  ["!"] = "StatusModeShell",
+  t = "StatusModeTerminal",
+}
+
+local function mode_highlight(mode)
+  return mode_highlight_map[mode] or "StatusModeNormal"
+end
+
 local function set_highlights()
   hi("StatusLine", { bg = NONE, fg = NONE })
   hi("StatusLineNC", { bg = NONE, fg = NONE })
-  hi("StatusMode", { bg = NONE, fg = palette.light_green, bold = true })
+  hi("StatusModeNormal", { bg = NONE, fg = palette.light_green, bold = true })
+  hi("StatusModeInsert", { bg = NONE, fg = palette.blue, bold = true })
+  hi("StatusModeVisual", { bg = NONE, fg = palette.yellow, bold = true })
+  hi("StatusModeSelect", { bg = NONE, fg = palette.orange, bold = true })
+  hi("StatusModeReplace", { bg = NONE, fg = palette.red, bold = true })
+  hi("StatusModeCommand", { bg = NONE, fg = palette.pink, bold = true })
+  hi("StatusModePrompt", { bg = NONE, fg = palette.aqua, bold = true })
+  hi("StatusModeShell", { bg = NONE, fg = palette.diag_warn, bold = true })
+  hi("StatusModeTerminal", { bg = NONE, fg = palette.git_add, bold = true })
   hi("StatusModeSep", { bg = NONE, fg = palette.green })
 
   hi("StatusGit", { bg = NONE, fg = palette.git_branch, bold = true })
@@ -236,7 +287,7 @@ function M.build()
   local parts = {}
 
   local mode = fn.mode(1)
-  parts[#parts + 1] = section("StatusMode", mode_icons[mode] or mode)
+  parts[#parts + 1] = section(mode_highlight(mode), mode_icons[mode] or mode)
   parts[#parts + 1] = separator("StatusModeSep")
 
   local file = file_label()
