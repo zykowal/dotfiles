@@ -29,7 +29,7 @@ local function current_client_names(bufnr)
 end
 
 local lsp_mappings = {
-    ['lua-language-server'] = 'lua_ls',
+  ['lua-language-server'] = 'lua_ls',
 }
 
 map("n", "<leader>le", function()
@@ -167,7 +167,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     map("n", "<leader>lT", function()
       vim.lsp.semantic_tokens.enable(not vim.lsp.semantic_tokens.is_enabled({ bufnr = args.buf }), { bufnr = args.buf })
     end, vim.tbl_extend("force", opts, { desc = "Toggle semantic tokens" }))
-
   end,
 })
 
