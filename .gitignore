@@ -1,2 +1,4 @@
 /nvim/.config/nvim/nvim-pack-lock.json
 /nvim/.config/nvim/nvim.log
+/karabiner/.config/karabiner/assets/*
+/karabiner/.config/karabiner/automatic_backups/*
