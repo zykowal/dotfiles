@@ -35,3 +35,12 @@ vim.api.nvim_create_autocmd('FileType', {
     vim.keymap.set('n', '<', '<C-w>-', opts)
   end,
 })
+
+-- Set MenuBar to transparent
+vim.api.nvim_create_autocmd({ 'ColorScheme', 'UIEnter' }, {
+  pattern = '*',
+  callback = function()
+    vim.api.nvim_set_hl(0, 'PmenuSbar', { bg = 'NONE', fg = 'NONE' })
+    vim.api.nvim_set_hl(0, 'PmenuThumb', { bg = 'NONE', fg = 'NONE' })
+  end,
+})
