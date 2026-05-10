@@ -1,4 +1,3 @@
-require("plugins.icons")
 require("plugins.fzf")
 require("plugins.mason")
 require("plugins.conform")
