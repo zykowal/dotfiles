@@ -13,6 +13,16 @@ local map = vim.keymap.set
 
 map("n", "<leader>pm", "<cmd>Mason<CR>", { desc = "Mason" })
 
+local lsp_package_mappings = {
+  ["lua-language-server"] = "lua_ls",
+  ["rust-analyzer"] = "rust_analyzer",
+}
+
+local lsp_package_names = {}
+for package_name, config_name in pairs(lsp_package_mappings) do
+  lsp_package_names[config_name] = package_name
+end
+
 local function current_client_names(bufnr)
   local names = {}
   local seen = {}
@@ -28,37 +38,80 @@ local function current_client_names(bufnr)
   return names
 end
 
-local lsp_mappings = {
-  ['lua-language-server'] = 'lua_ls',
-}
+local function get_lsp_configs(opts)
+  local configs = vim.lsp.get_configs(opts or {})
+  local by_name = {}
+
+  for _, config in ipairs(configs) do
+    by_name[config.name] = config
+  end
+
+  return configs, by_name
+end
+
+local function executable_from_cmd(cmd)
+  if type(cmd) == "table" then
+    return cmd[1]
+  end
+
+  if type(cmd) == "string" then
+    return vim.split(cmd, "%s+")[1]
+  end
+end
+
+local function is_config_available(config_name, configs_by_name, mason_registry)
+  local package_name = lsp_package_names[config_name] or config_name
+  local ok, package = pcall(mason_registry.get_package, package_name)
+  if ok and package:is_installed() then
+    return true
+  end
+
+  local config = configs_by_name[config_name]
+  local executable = config and executable_from_cmd(config.cmd)
+  return executable ~= nil and vim.fn.executable(executable) == 1
+end
+
+local function available_config_names(filetype)
+  local ok, mason_registry = pcall(require, "mason-registry")
+  if not ok then
+    return {}, "Mason not loaded yet"
+  end
+
+  local configs, configs_by_name = get_lsp_configs(filetype and { filetype = filetype } or nil)
+  local names = {}
+
+  for _, config in ipairs(configs) do
+    if is_config_available(config.name, configs_by_name, mason_registry) then
+      names[#names + 1] = config.name
+    end
+  end
+
+  table.sort(names)
+  return names
+end
 
 map("n", "<leader>le", function()
-  local mason_registry = require('mason-registry')
+  local bufnr = vim.api.nvim_get_current_buf()
+  local filetype = vim.bo[bufnr].filetype
+  local available, err = available_config_names(filetype)
 
-  if not mason_registry then
-    vim.notify("Mason not loaded yet", vim.log.levels.WARN)
+  if err then
+    vim.notify(err, vim.log.levels.WARN)
     return
   end
 
-  local installed_lsp_servers = mason_registry.get_installed_package_names()
-
-  if vim.fn.executable("rust-analyzer") == 1 then
-    installed_lsp_servers[#installed_lsp_servers + 1] = "rust_analyzer"
-  end
-
-  if vim.tbl_isempty(installed_lsp_servers) then
-    vim.notify("No LSP servers installed via Mason", vim.log.levels.WARN)
+  if vim.tbl_isempty(available) then
+    vim.notify("No available LSP configs for filetype: " .. filetype, vim.log.levels.WARN)
     return
   end
 
-  vim.ui.select(installed_lsp_servers, {
-    prompt = "LSP server to start: ",
+  vim.ui.select(available, {
+    prompt = "LSP config to enable: ",
   }, function(choice)
     if not choice then
       return
     end
 
-    choice = lsp_mappings[choice] or choice
     if vim.lsp.is_enabled(choice) then
       vim.notify(choice .. " is already enabled", vim.log.levels.INFO)
       return
@@ -98,9 +151,14 @@ end, { desc = "Disable LSP" })
 
 map("n", "<leader>li", function()
   local bufnr = vim.api.nvim_get_current_buf()
-  local configs = require('mason-registry').get_installed_package_names()
   local clients = current_client_names(bufnr)
   local filetype = vim.bo[bufnr].filetype
+  local configs, err = available_config_names(filetype)
+
+  if err then
+    vim.notify(err, vim.log.levels.WARN)
+    return
+  end
 
   if vim.tbl_isempty(configs) then
     vim.notify("No LSP configs for filetype: " .. filetype, vim.log.levels.WARN)
@@ -130,16 +188,6 @@ map("n", "<leader>li", function()
   vim.notify(table.concat(lines, "\n"), vim.log.levels.INFO, { title = "LSP Status" })
 end, { desc = "LSP status" })
 
-local capabilities = require("blink.cmp").get_lsp_capabilities()
-
-if capabilities.workspace and capabilities.workspace.didChangeWatchedFiles then
-  capabilities.workspace.didChangeWatchedFiles = nil
-end
-
-vim.lsp.config("*", {
-  capabilities = capabilities,
-})
-
 vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("UserLspAttach", { clear = true }),
   callback = function(args)
@@ -148,9 +196,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
       return
     end
 
-    local opts = { buffer = args.buf }
-    map("n", "K", vim.lsp.buf.hover, opts)
-    map("n", "<leader>lr", vim.lsp.buf.rename, opts)
+    if client:supports_method('textDocument/completion') then
+      vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
+    end
+
+    local opts = { buffer = args.buf, silent = true }
+    map("n", "K", vim.lsp.buf.hover, vim.tbl_extend("force", opts, { desc = "Hover" }))
+    map("i", "<C-s>", vim.lsp.buf.signature_help, vim.tbl_extend("force", opts, { desc = "Signature help" }))
+    map("n", "<leader>lr", vim.lsp.buf.rename, vim.tbl_extend("force", opts, { desc = "Rename" }))
 
     map("n", "[e", function()
       vim.diagnostic.jump({ count = -1, severity = vim.diagnostic.severity.ERROR, float = true })
@@ -160,13 +213,33 @@ vim.api.nvim_create_autocmd("LspAttach", {
       vim.diagnostic.jump({ count = 1, severity = vim.diagnostic.severity.ERROR, float = true })
     end, vim.tbl_extend("force", opts, { desc = "Next error" }))
 
-    map("n", "<leader>lh", function()
-      vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = args.buf }), { bufnr = args.buf })
-    end, vim.tbl_extend("force", opts, { desc = "Toggle inlay hints" }))
+    -- Lsp Document Highlight
+    -- if client:supports_method("textDocument/documentHighlight") then
+    --   local highlight_group = vim.api.nvim_create_augroup("UserLspDocumentHighlight", { clear = false })
+    --
+    --   vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+    --     group = highlight_group,
+    --     buffer = args.buf,
+    --     callback = vim.lsp.buf.document_highlight,
+    --   })
+    --   vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI", "BufLeave" }, {
+    --     group = highlight_group,
+    --     buffer = args.buf,
+    --     callback = vim.lsp.buf.clear_references,
+    --   })
+    -- end
 
-    map("n", "<leader>lT", function()
-      vim.lsp.semantic_tokens.enable(not vim.lsp.semantic_tokens.is_enabled({ bufnr = args.buf }), { bufnr = args.buf })
-    end, vim.tbl_extend("force", opts, { desc = "Toggle semantic tokens" }))
+    if client:supports_method("textDocument/inlayHint") then
+      map("n", "<leader>lh", function()
+        vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ bufnr = args.buf }), { bufnr = args.buf })
+      end, vim.tbl_extend("force", opts, { desc = "Toggle inlay hints" }))
+    end
+
+    if client:supports_method("textDocument/semanticTokens/full") then
+      map("n", "<leader>lT", function()
+        vim.lsp.semantic_tokens.enable(not vim.lsp.semantic_tokens.is_enabled({ bufnr = args.buf }), { bufnr = args.buf })
+      end, vim.tbl_extend("force", opts, { desc = "Toggle semantic tokens" }))
+    end
   end,
 })
 
@@ -184,9 +257,9 @@ vim.lsp.config("clangd", {
     "build.ninja",
     ".git",
   },
-  capabilities = vim.tbl_deep_extend("force", {}, capabilities, {
+  capabilities = {
     offsetEncoding = { "utf-8" },
-  }),
+  },
   cmd = {
     "clangd",
     "--background-index",
@@ -207,6 +280,9 @@ vim.lsp.config("clangd", {
 vim.lsp.config("lua_ls", {
   settings = {
     Lua = {
+      completion = {
+        callSnippet = "Replace",
+      },
       hint = {
         enable = true,
         arrayIndex = "Disable",
@@ -219,6 +295,7 @@ vim.lsp.config("lua_ls", {
       },
       workspace = {
         checkThirdParty = false,
+        library = vim.api.nvim_get_runtime_file("", true),
       },
     },
   },
@@ -228,6 +305,12 @@ vim.lsp.config("lua_ls", {
 vim.lsp.config("rust_analyzer", {
   settings = {
     ["rust-analyzer"] = {
+      cargo = {
+        allFeatures = true,
+        buildScripts = {
+          enable = true,
+        },
+      },
       files = {
         excludeDirs = {
           ".direnv",
@@ -240,6 +323,9 @@ vim.lsp.config("rust_analyzer", {
         extraArgs = {
           "--no-deps",
         },
+      },
+      procMacro = {
+        enable = true,
       },
     },
   },
@@ -279,8 +365,8 @@ vim.lsp.config("gopls", {
         parameterNames = true,
         rangeVariableTypes = true,
       },
-      buildFlags = { "-tags", "integration" },
       completeUnimported = true,
+      completeFunctionCalls = true,
       diagnosticsDelay = "500ms",
       gofumpt = true,
       matcher = "Fuzzy",

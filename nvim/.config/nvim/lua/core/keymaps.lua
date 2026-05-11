@@ -53,4 +53,3 @@ vim.keymap.del("n", "grt", { silent = true })
 
 vim.keymap.set({ 'i', 'c' }, '<C-j>', [[pumvisible() ? "\<C-n>" : "\<C-j>"]], { expr = true })
 vim.keymap.set({ 'i', 'c' }, '<C-k>', [[pumvisible() ? "\<C-p>" : "\<C-k>"]], { expr = true })
-vim.keymap.set({ 'i', 'c' }, '<C-l>', [[pumvisible() ? "\<C-y>" : "\<C-l>"]], { expr = true })

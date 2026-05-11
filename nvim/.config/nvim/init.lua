@@ -15,7 +15,6 @@ vim.pack.add({
 	{ src = gh("mason-org/mason.nvim") },
 	{ src = gh("neovim/nvim-lspconfig") },
 	{ src = gh("ibhagwan/fzf-lua") },
-	{ src = gh("saghen/blink.cmp"), version = vim.version.range("^1") },
 	{ src = gh("stevearc/oil.nvim") },
 	{ src = gh("lewis6991/gitsigns.nvim") },
 	{ src = gh("stevearc/conform.nvim") },
