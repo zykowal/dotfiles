@@ -7,7 +7,7 @@ vim.keymap.set("x", "L", "$")
 vim.keymap.set("i", "<C-f>", "<Right>", { desc = "Move cursor right" })
 vim.keymap.set("i", "<C-b>", "<Left>", { desc = "Move cursor left" })
 vim.keymap.set("i", "<C-a>", "<C-o>^", { desc = "Move to beginning of line" })
-vim.keymap.set("i", "<C-e>", "<C-o>$", { desc = "Move to end of line" })
+-- vim.keymap.set("i", "<C-e>", "<C-o>$", { desc = "Move to end of line" })
 
 vim.keymap.set("v", "<", "<gv", { desc = "Indent left and reselect" })
 vim.keymap.set("v", ">", ">gv", { desc = "Indent right and reselect" })
@@ -53,3 +53,4 @@ vim.keymap.del("n", "grt", { silent = true })
 
 vim.keymap.set({ 'i', 'c' }, '<C-j>', [[pumvisible() ? "\<C-n>" : "\<C-j>"]], { expr = true })
 vim.keymap.set({ 'i', 'c' }, '<C-k>', [[pumvisible() ? "\<C-p>" : "\<C-k>"]], { expr = true })
+vim.keymap.set({ 'i', 'c' }, '<C-e>', [[pumvisible() ? "\<C-y>" : "\<C-o>$"]], { expr = true })
