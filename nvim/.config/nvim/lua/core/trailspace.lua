@@ -118,6 +118,6 @@ function M.setup(opts)
 end
 
 -- Auto-setup for personal config
-pcall(function() M.setup() end)
+M.setup()
 
 return M
