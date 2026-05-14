@@ -202,7 +202,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
     local opts = { buffer = args.buf, silent = true }
     map("n", "K", vim.lsp.buf.hover, vim.tbl_extend("force", opts, { desc = "Hover" }))
-    map("i", "<C-s>", vim.lsp.buf.signature_help, vim.tbl_extend("force", opts, { desc = "Signature help" }))
     map("n", "<leader>lr", vim.lsp.buf.rename, vim.tbl_extend("force", opts, { desc = "Rename" }))
 
     map("n", "[e", function()
