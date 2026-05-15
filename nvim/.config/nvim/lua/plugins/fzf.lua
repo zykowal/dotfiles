@@ -63,6 +63,7 @@ fzf.setup({
       scrollbar = false,
       layout = "horizontal",
       horizontal = "up:62%",
+      flip_columns = 120,
     },
   },
   defaults = {
@@ -81,6 +82,7 @@ fzf.setup({
   },
   fzf_opts = {
     ["--layout"] = "default",
+    ["--cycle"] = true,
   },
   keymap = {
     builtin = {
