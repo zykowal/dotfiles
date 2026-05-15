@@ -110,7 +110,11 @@ fzf.setup({
 
 fzf.register_ui_select()
 
-map("n", "<c-f>", function()
+map("n", "<C-e>", function()
+  fzf.grep_project()
+end, { desc = "Search lines" })
+
+map("n", "<C-f>", function()
   fzf.files()
 end, { desc = "Find files" })
 
