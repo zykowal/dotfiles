@@ -59,7 +59,6 @@ vim.keymap.set("i", '"', '""<left>')
 vim.keymap.set("i", "(", "()<left>")
 vim.keymap.set("i", "[", "[]<left>")
 vim.keymap.set("i", "{", "{}<left>")
-vim.keymap.set("i", "<", "<><left>")
 
 vim.keymap.del({ "n", "x" }, "gra", { silent = true })
 vim.keymap.del("n", "grx", { silent = true })
