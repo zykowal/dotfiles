@@ -19,7 +19,6 @@ vim.pack.add({
 	{ src = gh("lewis6991/gitsigns.nvim") },
 	{ src = gh("stevearc/conform.nvim") },
 	{ src = gh("christoomey/vim-tmux-navigator") },
-	{ src = gh("catppuccin/nvim") },
 	{ src = gh("supermaven-inc/supermaven-nvim") },
 	{ src = gh("kylechui/nvim-surround") },
 	{ src = gh("nvim-mini/mini.ai") },
