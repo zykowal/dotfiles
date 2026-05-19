@@ -47,7 +47,7 @@ M.transparent = {
 		'Conditional', 'Repeat', 'Operator', 'Structure', 'LineNr', 'NonText',
 		'SignColumn', 'CursorLine', 'CursorLineNr', 'StatusLine', 'StatusLineNC',
 		'EndOfBuffer', 'NormalFloat', 'FloatBorder', 'FloatTitle', 'WinSeparator',
-		'Pmenu', 'PmenuSbar', 'PmenuThumb', 'FoldColumn', 'Folded',
+		'Pmenu', 'PmenuSel', 'PmenuMatchSel', 'PmenuSbar', 'PmenuThumb', 'FoldColumn', 'Folded',
 	},
 	extra_groups = {},
 	exclude_groups = {},
@@ -159,8 +159,8 @@ function M.colorscheme()
 	hl("Operator", { link = "Normal" })
 	hl("Pmenu", { bg = M.colors.dark_gray })
 	hl("PmenuMatch", { fg = M.colors.accent })
-	hl("PmenuMatchSel", { fg = M.colors.dark })
-	hl("PmenuSel", { bg = M.colors.accent, fg = M.colors.dark })
+	hl("PmenuMatchSel", { fg = M.colors.accent, bold = true })
+	hl("PmenuSel", { fg = M.colors.accent, bold = true })
 	hl("PmenuThumb", { bg = M.colors.gray })
 	hl("PreProc", { link = "Normal" })
 	hl("Question", { fg = M.colors.accent })
@@ -189,6 +189,7 @@ function M.colorscheme()
 	hl("LeapMatch", { fg = M.colors.match })
 	hl("LeapLabel", { fg = M.colors.green })
 	hl("LeapBackDrop", { fg = M.colors.backdrop })
+	hl("LspSignatureActiveParameter", { fg = M.colors.accent })
 
 	vim.api.nvim_exec_autocmds("ColorScheme", { modeline = false, pattern = vim.g.colors_name })
 	M.clear_transparent()
