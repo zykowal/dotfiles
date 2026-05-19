@@ -34,6 +34,9 @@ M.colors = {
 	diff_change = "#4D4322",
 	diff_delete = "#492523",
 	diff_text = "#857131",
+  match = "#F5C2E7",
+  backdrop = "#6C7086",
+  gray = "#4F5258",
 }
 
 -- stylua: ignore start
@@ -147,7 +150,6 @@ function M.colorscheme()
 	hl("LineNr", { fg = M.colors.light_gray })
 	hl("LineNrBelow", { fg = M.colors.gray })
 	hl("MatchParen", { bg = M.colors.dark_gray })
-	hl("MiniTrailspace", { bg = M.accents.red })
 	hl("ModeMsg", { fg = M.accents.green })
 	hl("MoreMsg", { fg = M.accents.blue })
 	hl("NonText", { fg = M.colors.ghost })
@@ -179,11 +181,14 @@ function M.colorscheme()
 	hl("Title", { fg = M.colors.white })
 	hl("Todo", { link = "Normal" })
 	hl("Type", { link = "Normal" })
-	hl("Visual", { bg = M.colors.dark_gray })
+	hl("Visual", { bg = M.colors.gray })
 	hl("WarningMsg", { fg = M.accents.yellow })
 	hl("WinBar", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinBarNC", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinSeparator", { fg = M.colors.gray })
+	hl("LeapMatch", { fg = M.colors.match })
+	hl("LeapLabel", { fg = M.colors.green })
+	hl("LeapBackDrop", { fg = M.colors.backdrop })
 
 	vim.api.nvim_exec_autocmds("ColorScheme", { modeline = false, pattern = vim.g.colors_name })
 	M.clear_transparent()
