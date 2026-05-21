@@ -26,7 +26,7 @@ M.colors = {
   green = "#A6E3A1",
   yellow = "#FAB387",
 	light_gray = "#A6A6A6",
-	gray = "#737373",
+	gray = "#6C7086",
 	ghost = "#4D4D4D",
 	dark_gray = "#282828",
 	dark = "#141414",
@@ -35,8 +35,7 @@ M.colors = {
 	diff_delete = "#492523",
 	diff_text = "#857131",
   match = "#F5C2E7",
-  backdrop = "#6C7086",
-  gray = "#4F5258",
+  visual = "#2E3A46",
 }
 
 -- stylua: ignore start
@@ -181,15 +180,11 @@ function M.colorscheme()
 	hl("Title", { fg = M.colors.white })
 	hl("Todo", { link = "Normal" })
 	hl("Type", { link = "Normal" })
-	hl("Visual", { bg = M.colors.gray })
+	hl("Visual", { bg = M.colors.visual })
 	hl("WarningMsg", { fg = M.accents.yellow })
 	hl("WinBar", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinBarNC", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinSeparator", { fg = M.colors.gray })
-	hl("LeapMatch", { fg = M.colors.match })
-	hl("LeapLabel", { fg = M.colors.green })
-	hl("LeapBackDrop", { fg = M.colors.backdrop })
-	hl("LspSignatureActiveParameter", { fg = M.colors.accent })
 
 	vim.api.nvim_exec_autocmds("ColorScheme", { modeline = false, pattern = vim.g.colors_name })
 	M.clear_transparent()
