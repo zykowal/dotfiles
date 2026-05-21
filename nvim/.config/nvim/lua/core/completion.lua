@@ -34,9 +34,36 @@ local kind_order = {}
 for idx, name in ipairs(protocol.CompletionItemKind) do
   kind_order[name] = idx
 end
-kind_order.Snippet = 0
+-- Keep LSP snippet items behind semantic symbols like methods and variables.
 kind_order.Text = 999
-kind_order.Unknown = 1000
+kind_order.Snippet = 1000
+kind_order.Unknown = 1001
+
+local context_kind_rank = {
+  member = {
+    Field = 2,
+    Property = 2,
+    Method = 2,
+    Function = 1,
+    Variable = 1,
+    Constant = 1,
+    EnumMember = 1,
+  },
+  scope = {
+    Function = 2,
+    Method = 2,
+    Constructor = 2,
+    Constant = 2,
+    EnumMember = 2,
+    Struct = 1,
+    Enum = 1,
+    Class = 1,
+    Interface = 1,
+    Module = 1,
+    TypeParameter = 1,
+    Keyword = 1,
+  },
+}
 
 local function get_lsp_item(entry)
   return vim.tbl_get(entry, "user_data", "nvim", "lsp", "completion_item") or {}
@@ -49,6 +76,12 @@ end
 local function is_snippet_entry(entry)
   local item = get_lsp_item(entry)
   if vim.tbl_get(item, "data", "compl", "source") == "snippet" then
+    return true
+  end
+  if item.insertTextFormat == protocol.InsertTextFormat.Snippet then
+    return true
+  end
+  if item.kind == protocol.CompletionItemKind.Snippet or item.kind == "Snippet" then
     return true
   end
 
@@ -169,12 +202,28 @@ local function label_text(entry)
   return tostring(item.label or entry.abbr or entry.word or "")
 end
 
-local function source_rank(entry)
+local function snippet_rank(entry)
   if is_snippet_entry(entry) then
     return 1
   end
 
   return 0
+end
+
+local function completion_context(prefix)
+  local before = line_to_cursor()
+  if prefix ~= "" then
+    before = before:sub(1, math.max(#before - #prefix, 0))
+  end
+
+  if before:match("%.%s*$") then
+    return "member"
+  end
+  if before:match("::%s*$") then
+    return "scope"
+  end
+
+  return nil
 end
 
 local function query_rank(entry)
@@ -232,6 +281,14 @@ end
 
 local function kind_rank(entry)
   return kind_order[completion_kind(entry)] or 500
+end
+
+local function context_rank(entry, context)
+  if not context then
+    return 0
+  end
+
+  return vim.tbl_get(context_kind_rank, context, completion_kind(entry)) or 0
 end
 
 local function sort_text(entry)
@@ -301,23 +358,12 @@ end
 
 function M._compare_items(a, b)
   local prefix = current_prefix()
-
-  local a_source = source_rank(a)
-  local b_source = source_rank(b)
-  if a_source ~= b_source then
-    return a_source < b_source
-  end
+  local context = completion_context(prefix)
 
   local a_query = query_rank(a)
   local b_query = query_rank(b)
   if a_query ~= b_query then
     return a_query > b_query
-  end
-
-  local a_prefix = prefix_rank(a, prefix)
-  local b_prefix = prefix_rank(b, prefix)
-  if a_prefix ~= b_prefix then
-    return a_prefix > b_prefix
   end
 
   local a_exact = is_exact_match(a, prefix)
@@ -326,18 +372,33 @@ function M._compare_items(a, b)
     return a_exact
   end
 
-  -- Keep frecency within the same live-query/prefix bucket so it cannot lift
-  -- stale or weakly related items above stronger current matches.
-  local a_frecency = frecency(a)
-  local b_frecency = frecency(b)
-  if a_frecency ~= b_frecency then
-    return a_frecency > b_frecency
+  local a_prefix = prefix_rank(a, prefix)
+  local b_prefix = prefix_rank(b, prefix)
+  if a_prefix ~= b_prefix then
+    return a_prefix > b_prefix
+  end
+
+  local a_context = context_rank(a, context)
+  local b_context = context_rank(b, context)
+  if a_context ~= b_context then
+    return a_context > b_context
+  end
+
+  local a_snippet = snippet_rank(a)
+  local b_snippet = snippet_rank(b)
+  if a_snippet ~= b_snippet then
+    return a_snippet < b_snippet
   end
 
   local a_fuzzy = a._fuzzy_score or 0
   local b_fuzzy = b._fuzzy_score or 0
-  if a_fuzzy ~= b_fuzzy then
+  if a_prefix == 1 and b_prefix == 1 and a_fuzzy ~= b_fuzzy then
     return a_fuzzy > b_fuzzy
+  end
+
+  local by_sort_text = compare_lexicographically(sort_text(a), sort_text(b))
+  if by_sort_text ~= nil then
+    return by_sort_text
   end
 
   local a_kind = kind_rank(a)
@@ -346,9 +407,12 @@ function M._compare_items(a, b)
     return a_kind < b_kind
   end
 
-  local by_sort_text = compare_lexicographically(sort_text(a), sort_text(b))
-  if by_sort_text ~= nil then
-    return by_sort_text
+  -- Keep history as a final tiebreaker so it cannot override live-query,
+  -- context-specific, or server-provided ordering.
+  local a_frecency = frecency(a)
+  local b_frecency = frecency(b)
+  if a_frecency ~= b_frecency then
+    return a_frecency > b_frecency
   end
 
   local a_label = label_text(a)
