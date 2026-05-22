@@ -44,16 +44,6 @@ vim.keymap.set("n", "<C-q>", "<cmd>:copen<CR>", { desc = "Open quickfix list" })
 vim.keymap.set("n", "<leader>lq", function() vim.diagnostic.setqflist() end, { desc = "Open qflist" })
 vim.keymap.set("n", "<leader>ll", function() vim.diagnostic.setloclist() end, { desc = "Open loclist" })
 
-vim.keymap.set('i', "'", function()
-  local col = vim.fn.charcol('.')
-  if col > 1 then
-    local char_before = vim.fn.getline('.'):sub(col - 1, col - 1)
-    if char_before == '&' then
-      return "'"
-    end
-  end
-  return "''<Left>"
-end, { expr = true, noremap = true })
 vim.keymap.set("i", "`", "``<left>")
 vim.keymap.set("i", '"', '""<left>')
 vim.keymap.set("i", "(", "()<left>")
