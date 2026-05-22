@@ -30,16 +30,37 @@ M._snippet = {
   sources = {},
 }
 
+local compare_state
+local compare_generation = 0
+
 local kind_order = {}
 for idx, name in ipairs(protocol.CompletionItemKind) do
   kind_order[name] = idx
 end
--- Keep LSP snippet items behind semantic symbols like methods and variables.
+-- Keep low-signal kinds near the bottom within the same source bucket.
 kind_order.Text = 999
 kind_order.Snippet = 1000
 kind_order.Unknown = 1001
 
 local context_kind_rank = {
+  plain = {
+    Parameter = 4,
+    Variable = 4,
+    Field = 4,
+    Property = 4,
+    Constant = 4,
+    EnumMember = 4,
+    Function = 3,
+    Method = 3,
+    Constructor = 3,
+    Struct = 2,
+    Enum = 2,
+    Class = 2,
+    Interface = 2,
+    Module = 2,
+    TypeParameter = 2,
+    Keyword = 1,
+  },
   member = {
     Field = 2,
     Property = 2,
@@ -73,11 +94,38 @@ local function is_snippet_client(client)
   return client ~= nil and vim.tbl_get(client, "config", "_compl_source") == "snippet"
 end
 
-local function is_snippet_entry(entry)
+local function get_lsp_client(entry)
+  local client_id = vim.tbl_get(entry, "user_data", "nvim", "lsp", "client_id")
+  if type(client_id) ~= "number" then
+    return nil
+  end
+
+  return vim.lsp.get_client_by_id(client_id)
+end
+
+local function is_lsp_entry(entry)
+  if next(get_lsp_item(entry)) then
+    return true
+  end
+
+  return get_lsp_client(entry) ~= nil
+end
+
+local function is_custom_snippet_entry(entry)
   local item = get_lsp_item(entry)
   if vim.tbl_get(item, "data", "compl", "source") == "snippet" then
     return true
   end
+
+  return is_snippet_client(get_lsp_client(entry))
+end
+
+local function is_snippet_entry(entry)
+  if is_custom_snippet_entry(entry) then
+    return true
+  end
+
+  local item = get_lsp_item(entry)
   if item.insertTextFormat == protocol.InsertTextFormat.Snippet then
     return true
   end
@@ -85,9 +133,7 @@ local function is_snippet_entry(entry)
     return true
   end
 
-  local client_id = vim.tbl_get(entry, "user_data", "nvim", "lsp", "client_id")
-  local client = type(client_id) == "number" and vim.lsp.get_client_by_id(client_id) or nil
-  return is_snippet_client(client)
+  return false
 end
 
 local function should_ignore_case(prefix)
@@ -129,6 +175,27 @@ local function line_to_cursor()
   end
 
   return vim.api.nvim_get_current_line():sub(1, col)
+end
+
+local function trim_keyword_suffix(text)
+  text = text or ""
+  local start = vim.fn.match(text, "\\k*$")
+  if start < 0 then
+    return text
+  end
+
+  return text:sub(1, start)
+end
+
+local function completion_context_from_before(before)
+  if before:match("%.%s*$") then
+    return "member"
+  end
+  if before:match("::%s*$") then
+    return "scope"
+  end
+
+  return nil
 end
 
 local function has_keyword_prefix(prefix)
@@ -202,12 +269,20 @@ local function label_text(entry)
   return tostring(item.label or entry.abbr or entry.word or "")
 end
 
-local function snippet_rank(entry)
-  if is_snippet_entry(entry) then
-    return 1
+local function source_rank(entry)
+  if is_custom_snippet_entry(entry) then
+    return 3
   end
 
-  return 0
+  if is_lsp_entry(entry) then
+    if is_snippet_entry(entry) then
+      return 1
+    end
+
+    return 0
+  end
+
+  return 2
 end
 
 local function completion_context(prefix)
@@ -216,14 +291,82 @@ local function completion_context(prefix)
     before = before:sub(1, math.max(#before - #prefix, 0))
   end
 
-  if before:match("%.%s*$") then
-    return "member"
-  end
-  if before:match("::%s*$") then
-    return "scope"
+  return completion_context_from_before(before)
+end
+
+local function completion_context_at_position(params)
+  local uri = vim.tbl_get(params, "textDocument", "uri")
+  local position = vim.tbl_get(params, "position")
+  if type(uri) ~= "string" or type(position) ~= "table" then
+    return nil
   end
 
-  return nil
+  local bufnr = vim.uri_to_bufnr(uri)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return nil
+  end
+
+  local line = vim.api.nvim_buf_get_lines(bufnr, position.line, position.line + 1, false)[1]
+  if type(line) ~= "string" then
+    return nil
+  end
+
+  local byte_col = vim.str_byteindex(line, "utf-16", position.character, false)
+  if type(byte_col) ~= "number" then
+    byte_col = #line
+  end
+
+  local before = trim_keyword_suffix(line:sub(1, byte_col))
+  return completion_context_from_before(before)
+end
+
+local function empty_completion_result(result)
+  if type(result) == "table" and result.items ~= nil then
+    return {
+      isIncomplete = result.isIncomplete or false,
+      itemDefaults = result.itemDefaults,
+      items = {},
+    }
+  end
+
+  return {}
+end
+
+local function get_compare_state()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local cursor_row, cursor_col = cursor[1], cursor[2]
+  local changedtick = vim.api.nvim_buf_get_changedtick(bufnr)
+
+  if compare_state
+      and compare_state.bufnr == bufnr
+      and compare_state.changedtick == changedtick
+      and compare_state.cursor_row == cursor_row
+      and compare_state.cursor_col == cursor_col then
+    return compare_state
+  end
+
+  local prefix = current_prefix()
+  compare_state = {
+    bufnr = bufnr,
+    changedtick = changedtick,
+    cursor_row = cursor_row,
+    cursor_col = cursor_col,
+    prefix = prefix,
+    context = completion_context(prefix),
+    now_ms = vim.uv.now(),
+    item_cache = setmetatable({}, { __mode = "k" }),
+  }
+
+  compare_generation = compare_generation + 1
+  local generation = compare_generation
+  vim.schedule(function()
+    if compare_generation == generation then
+      compare_state = nil
+    end
+  end)
+
+  return compare_state
 end
 
 local function query_rank(entry)
@@ -284,11 +427,7 @@ local function kind_rank(entry)
 end
 
 local function context_rank(entry, context)
-  if not context then
-    return 0
-  end
-
-  return vim.tbl_get(context_kind_rank, context, completion_kind(entry)) or 0
+  return vim.tbl_get(context_kind_rank, context or "plain", completion_kind(entry)) or 0
 end
 
 local function sort_text(entry)
@@ -308,7 +447,7 @@ local function compare_lexicographically(a, b)
   return nil
 end
 
-local function frecency(entry)
+local function frecency(entry, now_ms)
   if not M._opts.history.enable then
     return 0
   end
@@ -319,7 +458,7 @@ local function frecency(entry)
     return 0
   end
 
-  local age_in_ms = vim.uv.now() - record.accepted_at
+  local age_in_ms = (now_ms or vim.uv.now()) - record.accepted_at
   local half_life = math.max(M._opts.history.half_life_ms, 1)
   return record.frequency * math.exp(-math.log(2) * age_in_ms / half_life)
 end
@@ -356,74 +495,82 @@ local function enable_completion(client_id, bufnr)
   })
 end
 
+local function compare_item_data(entry, state)
+  local data = state.item_cache[entry]
+  if data then
+    return data
+  end
+
+  local label = label_text(entry)
+  data = {
+    query = query_rank(entry),
+    source = source_rank(entry),
+    exact = is_exact_match(entry, state.prefix),
+    prefix = prefix_rank(entry, state.prefix),
+    context = context_rank(entry, state.context),
+    fuzzy = entry._fuzzy_score or 0,
+    sort_text = sort_text(entry),
+    kind = kind_rank(entry),
+    frecency = frecency(entry, state.now_ms),
+    label = label,
+    label_len = #label,
+  }
+
+  state.item_cache[entry] = data
+  return data
+end
+
 function M._compare_items(a, b)
-  local prefix = current_prefix()
-  local context = completion_context(prefix)
+  local state = get_compare_state()
+  local a_data = compare_item_data(a, state)
+  local b_data = compare_item_data(b, state)
 
-  local a_query = query_rank(a)
-  local b_query = query_rank(b)
-  if a_query ~= b_query then
-    return a_query > b_query
+  if a_data.query ~= b_data.query then
+    return a_data.query > b_data.query
   end
 
-  local a_exact = is_exact_match(a, prefix)
-  local b_exact = is_exact_match(b, prefix)
-  if a_exact ~= b_exact then
-    return a_exact
+  if a_data.source ~= b_data.source then
+    return a_data.source < b_data.source
   end
 
-  local a_prefix = prefix_rank(a, prefix)
-  local b_prefix = prefix_rank(b, prefix)
-  if a_prefix ~= b_prefix then
-    return a_prefix > b_prefix
+  if a_data.exact ~= b_data.exact then
+    return a_data.exact
   end
 
-  local a_context = context_rank(a, context)
-  local b_context = context_rank(b, context)
-  if a_context ~= b_context then
-    return a_context > b_context
+  if a_data.prefix ~= b_data.prefix then
+    return a_data.prefix > b_data.prefix
   end
 
-  local a_snippet = snippet_rank(a)
-  local b_snippet = snippet_rank(b)
-  if a_snippet ~= b_snippet then
-    return a_snippet < b_snippet
+  if a_data.context ~= b_data.context then
+    return a_data.context > b_data.context
   end
 
-  local a_fuzzy = a._fuzzy_score or 0
-  local b_fuzzy = b._fuzzy_score or 0
-  if a_prefix == 1 and b_prefix == 1 and a_fuzzy ~= b_fuzzy then
-    return a_fuzzy > b_fuzzy
+  if a_data.prefix == 1 and b_data.prefix == 1 and a_data.fuzzy ~= b_data.fuzzy then
+    return a_data.fuzzy > b_data.fuzzy
   end
 
-  local by_sort_text = compare_lexicographically(sort_text(a), sort_text(b))
+  -- Prefer items you actually accept often, but only after live-query,
+  -- source-specific, and context-aware ranking has already narrowed the field.
+  if a_data.frecency ~= b_data.frecency then
+    return a_data.frecency > b_data.frecency
+  end
+
+  local by_sort_text = compare_lexicographically(a_data.sort_text, b_data.sort_text)
   if by_sort_text ~= nil then
     return by_sort_text
   end
 
-  local a_kind = kind_rank(a)
-  local b_kind = kind_rank(b)
-  if a_kind ~= b_kind then
-    return a_kind < b_kind
+  if a_data.kind ~= b_data.kind then
+    return a_data.kind < b_data.kind
   end
 
-  -- Keep history as a final tiebreaker so it cannot override live-query,
-  -- context-specific, or server-provided ordering.
-  local a_frecency = frecency(a)
-  local b_frecency = frecency(b)
-  if a_frecency ~= b_frecency then
-    return a_frecency > b_frecency
-  end
-
-  local a_label = label_text(a)
-  local b_label = label_text(b)
-  local by_label = compare_lexicographically(a_label, b_label)
+  local by_label = compare_lexicographically(a_data.label, b_data.label)
   if by_label ~= nil then
     return by_label
   end
 
-  if #a_label ~= #b_label then
-    return #a_label < #b_label
+  if a_data.label_len ~= b_data.label_len then
+    return a_data.label_len < b_data.label_len
   end
 
   return false
@@ -525,16 +672,6 @@ local function start_snippet_source(source, filetype, bufnr)
       _compl_source = "snippet",
     }, { bufnr = bufnr, silent = true }) or source.client_id
   end)
-end
-
-local function matches_filetype(filetype, language)
-  if type(language) == "table" then
-    return vim.iter(language):any(function(ft)
-      return ft == filetype
-    end)
-  end
-
-  return language == filetype
 end
 
 local function collect_snippet_items(snippet_data, items, seen)
@@ -653,23 +790,6 @@ function M._load_snippets(filetype, callback)
 
   for _, root in ipairs(M._opts.snippet.paths) do
     local expanded_root = vim.fn.resolve(vim.fn.expand(root))
-    local manifest = vim.fs.joinpath(expanded_root, "package.json")
-
-    if is_file(manifest) then
-      read_json(manifest, function(manifest_data)
-        for _, contribution in ipairs(vim.tbl_get(manifest_data, "contributes", "snippets") or {}) do
-          if contribution.path and matches_filetype(filetype, contribution.language) then
-            local snippet_file = vim.fn.resolve(vim.fs.joinpath(expanded_root, contribution.path))
-            if is_file(snippet_file) then
-              read_json(snippet_file, function(snippet_data)
-                collect_snippet_items(snippet_data, items, seen)
-              end)
-            end
-          end
-        end
-      end)
-    end
-
     local flat_file = vim.fs.joinpath(expanded_root, string.format("%s.json", filetype))
     if is_file(flat_file) then
       read_json(flat_file, function(snippet_data)
@@ -692,7 +812,7 @@ function M._make_lsp_server(completion_items)
       end)
     end
 
-    function srv.request(method, _, callback)
+    function srv.request(method, params, callback)
       if method == "initialize" then
         respond(callback, nil, {
           capabilities = {
@@ -703,7 +823,12 @@ function M._make_lsp_server(completion_items)
           },
         })
       elseif method == "textDocument/completion" then
-        respond(callback, nil, completion_items)
+        local result = completion_items
+        if completion_context_at_position(params) ~= nil then
+          result = empty_completion_result(completion_items)
+        end
+
+        respond(callback, nil, result)
       elseif method == "shutdown" then
         closing = true
         respond(callback, nil, nil)
