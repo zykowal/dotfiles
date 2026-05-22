@@ -27,3 +27,7 @@ require("oil").setup({
 vim.keymap.set("n", "<leader>e", function()
   require("oil").open()
 end, { desc = "Open folder in Oil" })
+
+vim.keymap.set("n", "<leader>o", function()
+  require("oil").open(vim.fn.getcwd())
+end, { desc = "Open work folder in Oil" })
