@@ -111,7 +111,7 @@ fzf.setup({
 fzf.register_ui_select()
 
 map("n", "<C-e>", function()
-  fzf.grep_project()
+  fzf.lsp_live_workspace_symbols()
 end, { desc = "Search lines" })
 
 map("n", "<C-f>", function()
