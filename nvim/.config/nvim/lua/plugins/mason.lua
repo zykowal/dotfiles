@@ -196,10 +196,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
       return
     end
 
-    if client:supports_method('textDocument/completion') then
-      vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
-    end
-
     local opts = { buffer = args.buf, silent = true }
     map("n", "K", vim.lsp.buf.hover, vim.tbl_extend("force", opts, { desc = "Hover" }))
     map("n", "<leader>lr", vim.lsp.buf.rename, vim.tbl_extend("force", opts, { desc = "Rename" }))

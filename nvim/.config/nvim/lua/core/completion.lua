@@ -7,7 +7,7 @@ M._opts = {
   lsp = {
     -- Native ins-completion already drives omnifunc on every key when
     -- 'autocomplete' is enabled and 'complete' contains "o".
-    autotrigger = false,
+    autotrigger = true,
   },
   history = {
     enable = true,
@@ -44,21 +44,21 @@ kind_order.Unknown = 1001
 
 local context_kind_rank = {
   plain = {
-    Parameter = 4,
-    Variable = 4,
-    Field = 4,
-    Property = 4,
+    Variable = 8,
+    Parameter = 8,
+    Field = 7,
+    Property = 7,
+    Method = 6,
+    Function = 6,
+    Constructor = 5,
+    Class = 4,
+    Struct = 4,
+    Enum = 4,
+    Interface = 4,
     Constant = 4,
     EnumMember = 4,
-    Function = 3,
-    Method = 3,
-    Constructor = 3,
-    Struct = 2,
-    Enum = 2,
-    Class = 2,
-    Interface = 2,
+    TypeParameter = 3,
     Module = 2,
-    TypeParameter = 2,
     Keyword = 1,
   },
   member = {
@@ -153,6 +153,20 @@ local function first_line(text)
   return text:match("([^\n]*)") or text
 end
 
+local function keyword_suffix_start(text)
+  return vim.fn.match(text or "", "\\k*$")
+end
+
+local function keyword_suffix(text)
+  text = text or ""
+  local start = keyword_suffix_start(text)
+  if start < 0 then
+    return ""
+  end
+
+  return text:sub(start + 1)
+end
+
 local function current_prefix()
   local col = vim.api.nvim_win_get_cursor(0)[2]
   if col == 0 then
@@ -160,12 +174,7 @@ local function current_prefix()
   end
 
   local line = vim.api.nvim_get_current_line():sub(1, col)
-  local start = vim.fn.match(line, "\\k*$")
-  if start < 0 then
-    return ""
-  end
-
-  return line:sub(start + 1)
+  return keyword_suffix(line)
 end
 
 local function line_to_cursor()
@@ -179,7 +188,7 @@ end
 
 local function trim_keyword_suffix(text)
   text = text or ""
-  local start = vim.fn.match(text, "\\k*$")
+  local start = keyword_suffix_start(text)
   if start < 0 then
     return text
   end
@@ -199,7 +208,7 @@ local function completion_context_from_before(before)
 end
 
 local function has_keyword_prefix(prefix)
-  return prefix:find("%w") ~= nil
+  return keyword_suffix(prefix) ~= ""
 end
 
 local function has_trigger_character_context(bufnr)
