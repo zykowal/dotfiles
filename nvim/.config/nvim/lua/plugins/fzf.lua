@@ -70,6 +70,9 @@ fzf.setup({
     git_icons = false,
     file_icons = false,
   },
+  oldfiles = {
+    cwd_only = true,
+  },
   git = {
     hunks = {
       fzf_opts = {
@@ -110,9 +113,39 @@ fzf.setup({
 
 fzf.register_ui_select()
 
+local function has_workspace_symbol_lsp()
+  for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
+    if client:supports_method("workspace/symbol") then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function has_tags_file()
+  for _, tagfile in ipairs(vim.fn.tagfiles()) do
+    if vim.fn.filereadable(tagfile) == 1 then
+      return true
+    end
+  end
+
+  return vim.fn.filereadable(vim.fs.joinpath(vim.uv.cwd(), "tags")) == 1
+end
+
 map("n", "<C-e>", function()
-  fzf.lsp_live_workspace_symbols()
-end, { desc = "Search lines" })
+  if has_workspace_symbol_lsp() then
+    fzf.lsp_live_workspace_symbols()
+    return
+  end
+
+  if has_tags_file() then
+    fzf.tags_live_grep()
+    return
+  end
+
+  fzf.live_grep_native()
+end, { desc = "Workspace symbols or grep" })
 
 map("n", "<C-f>", function()
   fzf.files()
