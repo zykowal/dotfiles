@@ -61,7 +61,7 @@ opt.guicursor = "n-v-c-i:block"                                                 
 opt.termguicolors = true                                                                                           -- Set termguicolors to true
 opt.completeopt = { "fuzzy", "menu", "menuone", "noselect", "popup" }                                              -- Options for insert mode completion
 opt.autocomplete = true                                                                                            -- Enable completion
-opt.complete:append({ "o" })                                                                                       -- Use omni completion
+opt.complete = { ".,w,t,o" }                                                                                       -- Use omni completion
 opt.wildmenu = true                                                                                                -- Enable wild menu
 opt.wildoptions = 'pum,fuzzy'                                                                                      -- Enable wild options
 opt.wildmode = "noselect:lastused,full"                                                                            -- Enable wild mode
