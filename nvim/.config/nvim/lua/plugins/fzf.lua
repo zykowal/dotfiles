@@ -113,34 +113,26 @@ fzf.setup({
 
 fzf.register_ui_select()
 
-local function has_workspace_symbol_lsp()
-  for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
-    if client:supports_method("workspace/symbol") then
-      return true
-    end
-  end
-
-  return false
-end
-
-local function has_tags_file()
-  for _, tagfile in ipairs(vim.fn.tagfiles()) do
-    if vim.fn.filereadable(tagfile) == 1 then
-      return true
-    end
-  end
-
-  return vim.fn.filereadable(vim.fs.joinpath(vim.uv.cwd(), "tags")) == 1
-end
-
 map("n", "<C-e>", function()
-  if has_workspace_symbol_lsp() then
+  if #vim.lsp.get_clients({ bufnr = 0, method = "workspace/symbol" }) > 0 then
     fzf.lsp_live_workspace_symbols()
     return
   end
 
-  if has_tags_file() then
-    fzf.tags_live_grep()
+  local has_tags_file = false
+  for _, tagfile in ipairs(vim.fn.tagfiles()) do
+    if vim.fn.filereadable(tagfile) == 1 then
+      has_tags_file = true
+      break
+    end
+  end
+
+  if has_tags_file == false then
+    has_tags_file = vim.fn.filereadable(vim.fs.joinpath(vim.uv.cwd(), "tags")) == 1
+  end
+
+  if has_tags_file then
+    fzf.tags()
     return
   end
 
@@ -184,12 +176,11 @@ map("n", "gH", function()
 end, { desc = "Show supertypes" })
 
 map("n", "gr", function()
-  local clients = vim.lsp.get_clients({ bufnr = 0, method = "textDocument/references" })
-  if #clients > 0 then
+  if #vim.lsp.get_clients({ bufnr = 0, method = "textDocument/references" }) > 0 then
     fzf.lsp_references()
-  else
-    fzf.grep_cword()
+    return
   end
+  fzf.grep_cword()
 end, { desc = "Search references" })
 
 map("n", "gD", function()
