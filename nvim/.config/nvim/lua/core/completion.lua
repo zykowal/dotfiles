@@ -32,6 +32,8 @@ M._snippet = {
 
 local compare_state
 local compare_generation = 0
+local log2 = math.log(2)
+local history_frequency_cap = 32
 
 local kind_order = {}
 for idx, name in ipairs(protocol.CompletionItemKind) do
@@ -233,10 +235,20 @@ local function should_trigger_omnifunc(bufnr, prefix)
   return has_keyword_prefix(prefix) or has_trigger_character_context(bufnr)
 end
 
-local function completion_key(entry)
+local function history_namespace(filetype)
+  if type(filetype) ~= "string" or filetype == "" then
+    return "_"
+  end
+
+  return filetype
+end
+
+local function completion_key(entry, filetype)
+  local namespace = history_namespace(filetype)
   local item = get_lsp_item(entry)
   if next(item) then
     return table.concat({
+      namespace,
       tostring(item.label or entry.abbr or entry.word or ""),
       tostring(item.kind or entry.kind or ""),
       is_snippet_entry(entry) and "snippet" or "lsp",
@@ -249,6 +261,7 @@ local function completion_key(entry)
   end
 
   return table.concat({
+    namespace,
     label,
     tostring(entry.kind or ""),
     "plain",
@@ -361,6 +374,7 @@ local function get_compare_state()
     changedtick = changedtick,
     cursor_row = cursor_row,
     cursor_col = cursor_col,
+    filetype = vim.bo[bufnr].filetype,
     prefix = prefix,
     context = completion_context(prefix),
     now_ms = vim.uv.now(),
@@ -456,20 +470,31 @@ local function compare_lexicographically(a, b)
   return nil
 end
 
-local function frecency(entry, now_ms)
+local function frecency(entry, now_ms, filetype)
   if not M._opts.history.enable then
     return 0
   end
 
-  local key = completion_key(entry)
+  local key = completion_key(entry, filetype)
   local record = key and M._ctx.completion_history[key] or nil
   if not record then
     return 0
   end
 
-  local age_in_ms = (now_ms or vim.uv.now()) - record.accepted_at
+  local frequency = math.max(record.frequency or 0, 0)
+  if frequency == 0 then
+    return 0
+  end
+
   local half_life = math.max(M._opts.history.half_life_ms, 1)
-  return record.frequency * math.exp(-math.log(2) * age_in_ms / half_life)
+  local age_in_ms = math.max((now_ms or vim.uv.now()) - record.accepted_at, 0)
+  local recency_bucket_ms = math.max(math.floor(half_life / 4), 60 * 1000)
+  local recency_rank = math.max(3 - math.floor(age_in_ms / recency_bucket_ms), 0)
+  local frequency_rank = math.max(math.ceil(math.log(frequency + 1) / log2) - 1, 0)
+
+  -- Keep history as a gentle nudge: one-off accepts only help briefly, while
+  -- repeated picks earn a bounded boost without permanently taking over.
+  return math.min(frequency_rank, 4) * 10 + recency_rank
 end
 
 local function prune_history()
@@ -520,7 +545,7 @@ local function compare_item_data(entry, state)
     fuzzy = entry._fuzzy_score or 0,
     sort_text = sort_text(entry),
     kind = kind_rank(entry),
-    frecency = frecency(entry, state.now_ms),
+    frecency = frecency(entry, state.now_ms, state.filetype),
     label = label,
     label_len = #label,
   }
@@ -536,10 +561,6 @@ function M._compare_items(a, b)
 
   if a_data.query ~= b_data.query then
     return a_data.query > b_data.query
-  end
-
-  if a_data.source ~= b_data.source then
-    return a_data.source < b_data.source
   end
 
   if a_data.exact ~= b_data.exact then
@@ -558,10 +579,14 @@ function M._compare_items(a, b)
     return a_data.fuzzy > b_data.fuzzy
   end
 
-  -- Prefer items you actually accept often, but only after live-query,
-  -- source-specific, and context-aware ranking has already narrowed the field.
+  -- Use filetype-local history as a late nudge after live query and fuzzy
+  -- matching have already narrowed the field.
   if a_data.frecency ~= b_data.frecency then
     return a_data.frecency > b_data.frecency
+  end
+
+  if a_data.source ~= b_data.source then
+    return a_data.source < b_data.source
   end
 
   local by_sort_text = compare_lexicographically(a_data.sort_text, b_data.sort_text)
@@ -623,13 +648,13 @@ function M._on_completedone()
     return
   end
 
-  local key = completion_key(completed_item)
+  local key = completion_key(completed_item, vim.bo[vim.api.nvim_get_current_buf()].filetype)
   if not key then
     return
   end
 
   local record = M._ctx.completion_history[key] or { frequency = 0, accepted_at = 0 }
-  record.frequency = record.frequency + 1
+  record.frequency = math.min(record.frequency + 1, history_frequency_cap)
   record.accepted_at = vim.uv.now()
   M._ctx.completion_history[key] = record
   prune_history()
