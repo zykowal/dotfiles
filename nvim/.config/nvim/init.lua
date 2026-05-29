@@ -7,10 +7,6 @@ local gh = function(repo)
 	return "https://github.com/" .. repo
 end
 
-local cb = function(repo)
-  return 'https://codeberg.org/' .. repo
-end
-
 vim.pack.add({
 	{ src = gh("mason-org/mason.nvim") },
 	{ src = gh("neovim/nvim-lspconfig") },
@@ -22,7 +18,6 @@ vim.pack.add({
 	{ src = gh("supermaven-inc/supermaven-nvim") },
 	{ src = gh("kylechui/nvim-surround") },
 	{ src = gh("nvim-mini/mini.ai") },
-	{ src = cb("andyg/leap.nvim") },
 }, { confirm = false })
 
 require("core")
