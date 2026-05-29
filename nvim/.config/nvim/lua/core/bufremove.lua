@@ -84,7 +84,4 @@ function M.setup(user_config)
   vim.keymap.set('n', config.key, function() M.close() end, config.map_opts)
 end
 
--- Auto-setup with defaults when required directly
-M.setup()
-
 return M

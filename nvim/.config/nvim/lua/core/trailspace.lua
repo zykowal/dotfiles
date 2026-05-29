@@ -117,7 +117,4 @@ function M.setup(opts)
   -- No user commands: trimming is performed automatically on save.
 end
 
--- Auto-setup for personal config
-M.setup()
-
 return M

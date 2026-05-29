@@ -219,8 +219,6 @@ function M.setup(opts)
 	})
 end
 
-
 M.colorscheme()
-M.setup()
 
 return M

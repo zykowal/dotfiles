@@ -423,6 +423,4 @@ M.setup = function()
   vim.o.statusline = '%!v:lua.require(\"core.statusline\").build()'
 end
 
-M.setup()
-
 return M
