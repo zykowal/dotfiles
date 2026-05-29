@@ -5,8 +5,6 @@ local protocol = vim.lsp.protocol
 
 M._opts = {
   lsp = {
-    -- Native ins-completion already drives omnifunc on every key when
-    -- 'autocomplete' is enabled and 'complete' contains "o".
     autotrigger = true,
   },
   history = {
@@ -32,8 +30,6 @@ M._snippet = {
 
 local compare_state
 local compare_generation = 0
-local log2 = math.log(2)
-local history_frequency_cap = 32
 
 local kind_order = {}
 for idx, name in ipairs(protocol.CompletionItemKind) do
@@ -67,17 +63,17 @@ local context_kind_rank = {
     Field = 2,
     Property = 2,
     Method = 2,
-    Function = 1,
+    Function = 2,
     Variable = 1,
     Constant = 1,
     EnumMember = 1,
   },
   scope = {
     Function = 2,
-    Method = 2,
     Constructor = 2,
     Constant = 2,
     EnumMember = 2,
+    Method = 1,
     Struct = 1,
     Enum = 1,
     Class = 1,
@@ -86,6 +82,16 @@ local context_kind_rank = {
     TypeParameter = 1,
     Keyword = 1,
   },
+}
+
+local member_context_suffix_patterns = {
+  "%?%.%s*$",
+  "%-%>%s*$",
+  "%.%s*$",
+}
+
+local scope_context_suffix_patterns = {
+  "::%s*$",
 }
 
 local function get_lsp_item(entry)
@@ -136,6 +142,47 @@ local function is_snippet_entry(entry)
   end
 
   return false
+end
+
+-- Resolve all LSP-related fields for an entry exactly once.
+-- Returns a lightweight struct reused across all ranking functions inside
+-- compare_item_data, avoiding repeated vim.tbl_get traversals.
+local function resolve_lsp_info(entry)
+  local lsp_ud = vim.tbl_get(entry, "user_data", "nvim", "lsp") or {}
+  local item = lsp_ud.completion_item or {}
+
+  local client_id = lsp_ud.client_id
+  local client = type(client_id) == "number" and vim.lsp.get_client_by_id(client_id) or nil
+
+  local has_item = next(item) ~= nil
+  local is_lsp = has_item or client ~= nil
+
+  local is_custom_snip = false
+  if has_item then
+    is_custom_snip = vim.tbl_get(item, "data", "compl", "source") == "snippet"
+  end
+  if not is_custom_snip then
+    is_custom_snip = is_snippet_client(client)
+  end
+
+  local is_snip = is_custom_snip
+  if not is_snip and has_item then
+    is_snip = item.insertTextFormat == protocol.InsertTextFormat.Snippet
+      or item.kind == protocol.CompletionItemKind.Snippet
+      or item.kind == "Snippet"
+  end
+
+  return {
+    item = item,
+    client = client,
+    is_lsp = is_lsp,
+    is_custom_snippet = is_custom_snip,
+    is_snippet = is_snip,
+  }
+end
+
+local function has_completeopt(flag)
+  return vim.list_contains(vim.opt.completeopt:get(), flag)
 end
 
 local function should_ignore_case(prefix)
@@ -199,11 +246,16 @@ local function trim_keyword_suffix(text)
 end
 
 local function completion_context_from_before(before)
-  if before:match("%.%s*$") then
-    return "member"
+  for _, pattern in ipairs(scope_context_suffix_patterns) do
+    if before:match(pattern) then
+      return "scope"
+    end
   end
-  if before:match("::%s*$") then
-    return "scope"
+
+  for _, pattern in ipairs(member_context_suffix_patterns) do
+    if before:match(pattern) then
+      return "member"
+    end
   end
 
   return nil
@@ -235,20 +287,30 @@ local function should_trigger_omnifunc(bufnr, prefix)
   return has_keyword_prefix(prefix) or has_trigger_character_context(bufnr)
 end
 
-local function history_namespace(filetype)
-  if type(filetype) ~= "string" or filetype == "" then
-    return "_"
+local function current_filetype()
+  local bufnr = vim.api.nvim_get_current_buf()
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return ""
   end
 
-  return filetype
+  return vim.bo[bufnr].filetype or ""
+end
+
+local function normalize_bufnr(bufnr)
+  if bufnr == nil or bufnr == 0 then
+    return vim.api.nvim_get_current_buf()
+  end
+
+  return bufnr
 end
 
 local function completion_key(entry, filetype)
-  local namespace = history_namespace(filetype)
+  filetype = type(filetype) == "string" and filetype or current_filetype()
+
   local item = get_lsp_item(entry)
   if next(item) then
     return table.concat({
-      namespace,
+      filetype,
       tostring(item.label or entry.abbr or entry.word or ""),
       tostring(item.kind or entry.kind or ""),
       is_snippet_entry(entry) and "snippet" or "lsp",
@@ -261,7 +323,33 @@ local function completion_key(entry, filetype)
   end
 
   return table.concat({
-    namespace,
+    filetype,
+    label,
+    tostring(entry.kind or ""),
+    "plain",
+  }, "\31")
+end
+
+local function completion_key_with_info(entry, info, filetype)
+  filetype = type(filetype) == "string" and filetype or current_filetype()
+
+  local item = info.item
+  if next(item) then
+    return table.concat({
+      filetype,
+      tostring(item.label or entry.abbr or entry.word or ""),
+      tostring(item.kind or entry.kind or ""),
+      info.is_snippet and "snippet" or "lsp",
+    }, "\31")
+  end
+
+  local label = tostring(entry.abbr or entry.word or "")
+  if label == "" then
+    return nil
+  end
+
+  return table.concat({
+    filetype,
     label,
     tostring(entry.kind or ""),
     "plain",
@@ -277,8 +365,8 @@ local function starts_with_prefix(text, prefix)
   return vim.startswith(normalize_case(text, prefix), normalize_case(prefix, prefix))
 end
 
-local function completion_text(entry)
-  local item = get_lsp_item(entry)
+local function completion_text_with_info(entry, info)
+  local item = info.item
   if next(item) then
     return first_line(item.filterText or vim.tbl_get(item, "textEdit", "newText") or item.insertText or item.label)
   end
@@ -286,24 +374,17 @@ local function completion_text(entry)
   return first_line(entry.word or entry.abbr or "")
 end
 
-local function label_text(entry)
-  local item = get_lsp_item(entry)
+local function label_text_with_info(entry, info)
+  local item = info.item
   return tostring(item.label or entry.abbr or entry.word or "")
 end
 
-local function source_rank(entry)
-  if is_custom_snippet_entry(entry) then
-    return 3
-  end
-
-  if is_lsp_entry(entry) then
-    if is_snippet_entry(entry) then
-      return 1
-    end
-
+local function source_rank_with_info(info)
+  if info.is_custom_snippet then return 3 end
+  if info.is_lsp then
+    if info.is_snippet then return 1 end
     return 0
   end
-
   return 2
 end
 
@@ -374,9 +455,10 @@ local function get_compare_state()
     changedtick = changedtick,
     cursor_row = cursor_row,
     cursor_col = cursor_col,
-    filetype = vim.bo[bufnr].filetype,
     prefix = prefix,
     context = completion_context(prefix),
+    filetype = vim.bo[bufnr].filetype or "",
+    fuzzy_sort = has_completeopt("fuzzy") and not has_completeopt("nosort"),
     now_ms = vim.uv.now(),
     item_cache = setmetatable({}, { __mode = "k" }),
   }
@@ -402,12 +484,12 @@ local function query_rank(entry)
   return 1
 end
 
-local function prefix_rank(entry, prefix)
+local function prefix_rank_with_info(entry, info, prefix)
   if prefix == "" then
     return 0
   end
 
-  for _, value in ipairs({ completion_text(entry), label_text(entry), entry.word }) do
+  for _, value in ipairs({ completion_text_with_info(entry, info), label_text_with_info(entry, info), entry.word }) do
     if starts_with_prefix(value, prefix) then
       return 2
     end
@@ -420,13 +502,13 @@ local function prefix_rank(entry, prefix)
   return 0
 end
 
-local function is_exact_match(entry, prefix)
+local function is_exact_match_with_info(entry, info, prefix)
   if prefix == "" then
     return false
   end
 
   local expected = normalize_case(prefix, prefix)
-  for _, value in ipairs({ completion_text(entry), label_text(entry), entry.word }) do
+  for _, value in ipairs({ completion_text_with_info(entry, info), label_text_with_info(entry, info), entry.word }) do
     value = first_line(value)
     if value ~= "" and normalize_case(value, prefix) == expected then
       return true
@@ -436,8 +518,8 @@ local function is_exact_match(entry, prefix)
   return false
 end
 
-local function completion_kind(entry)
-  local item = get_lsp_item(entry)
+local function completion_kind_with_info(entry, info)
+  local item = info.item
   if type(item.kind) == "number" then
     return protocol.CompletionItemKind[item.kind] or entry.kind or "Unknown"
   end
@@ -445,16 +527,17 @@ local function completion_kind(entry)
   return entry.kind or "Unknown"
 end
 
-local function kind_rank(entry)
-  return kind_order[completion_kind(entry)] or 500
+local function kind_rank_with_info(entry, info)
+  return kind_order[completion_kind_with_info(entry, info)] or 500
 end
 
-local function context_rank(entry, context)
-  return vim.tbl_get(context_kind_rank, context or "plain", completion_kind(entry)) or 0
+local function context_rank_with_info(entry, info, context)
+  local kind = completion_kind_with_info(entry, info)
+  return vim.tbl_get(context_kind_rank, context or "plain", kind) or 0
 end
 
-local function sort_text(entry)
-  local item = get_lsp_item(entry)
+local function sort_text_with_info(entry, info)
+  local item = info.item
   return tostring(item.sortText or item.label or entry.abbr or entry.word or "")
 end
 
@@ -470,31 +553,20 @@ local function compare_lexicographically(a, b)
   return nil
 end
 
-local function frecency(entry, now_ms, filetype)
+local function frecency_with_info(entry, info, filetype, now_ms)
   if not M._opts.history.enable then
     return 0
   end
 
-  local key = completion_key(entry, filetype)
+  local key = completion_key_with_info(entry, info, filetype)
   local record = key and M._ctx.completion_history[key] or nil
   if not record then
     return 0
   end
 
-  local frequency = math.max(record.frequency or 0, 0)
-  if frequency == 0 then
-    return 0
-  end
-
+  local age_in_ms = (now_ms or vim.uv.now()) - record.accepted_at
   local half_life = math.max(M._opts.history.half_life_ms, 1)
-  local age_in_ms = math.max((now_ms or vim.uv.now()) - record.accepted_at, 0)
-  local recency_bucket_ms = math.max(math.floor(half_life / 4), 60 * 1000)
-  local recency_rank = math.max(3 - math.floor(age_in_ms / recency_bucket_ms), 0)
-  local frequency_rank = math.max(math.ceil(math.log(frequency + 1) / log2) - 1, 0)
-
-  -- Keep history as a gentle nudge: one-off accepts only help briefly, while
-  -- repeated picks earn a bounded boost without permanently taking over.
-  return math.min(frequency_rank, 4) * 10 + recency_rank
+  return record.frequency * math.exp(-math.log(2) * age_in_ms / half_life)
 end
 
 local function prune_history()
@@ -503,22 +575,29 @@ local function prune_history()
     return
   end
 
-  while vim.tbl_count(M._ctx.completion_history) > max_entries do
-    local oldest_key
-    local oldest_at
+  local history = M._ctx.completion_history
 
-    for key, record in pairs(M._ctx.completion_history) do
-      if not oldest_at or record.accepted_at < oldest_at then
-        oldest_key = key
-        oldest_at = record.accepted_at
-      end
-    end
+  -- Count entries in a single pass.
+  local count = 0
+  for _ in pairs(history) do
+    count = count + 1
+  end
 
-    if not oldest_key then
-      break
-    end
+  local to_delete = count - max_entries
+  if to_delete <= 0 then
+    return
+  end
 
-    M._ctx.completion_history[oldest_key] = nil
+  -- Collect all (key, accepted_at) pairs, sort ascending, drop the oldest.
+  local entries = {}
+  for key, record in pairs(history) do
+    entries[#entries + 1] = { key = key, at = record.accepted_at }
+  end
+
+  table.sort(entries, function(a, b) return a.at < b.at end)
+
+  for i = 1, to_delete do
+    history[entries[i].key] = nil
   end
 end
 
@@ -535,17 +614,19 @@ local function compare_item_data(entry, state)
     return data
   end
 
-  local label = label_text(entry)
+  -- Resolve LSP fields once; all ranking functions reuse this struct.
+  local info = resolve_lsp_info(entry)
+  local label = label_text_with_info(entry, info)
   data = {
     query = query_rank(entry),
-    source = source_rank(entry),
-    exact = is_exact_match(entry, state.prefix),
-    prefix = prefix_rank(entry, state.prefix),
-    context = context_rank(entry, state.context),
-    fuzzy = entry._fuzzy_score or 0,
-    sort_text = sort_text(entry),
-    kind = kind_rank(entry),
-    frecency = frecency(entry, state.now_ms, state.filetype),
+    source = source_rank_with_info(info),
+    exact = is_exact_match_with_info(entry, info, state.prefix),
+    prefix = prefix_rank_with_info(entry, info, state.prefix),
+    context = context_rank_with_info(entry, info, state.context),
+    fuzzy = state.fuzzy_sort and (entry._fuzzy_score or 0) or 0,
+    sort_text = sort_text_with_info(entry, info),
+    kind = kind_rank_with_info(entry, info),
+    frecency = frecency_with_info(entry, info, state.filetype, state.now_ms),
     label = label,
     label_len = #label,
   }
@@ -575,12 +656,12 @@ function M._compare_items(a, b)
     return a_data.context > b_data.context
   end
 
-  if a_data.prefix == 1 and b_data.prefix == 1 and a_data.fuzzy ~= b_data.fuzzy then
+  if state.fuzzy_sort and a_data.prefix == 1 and b_data.prefix == 1 and a_data.fuzzy ~= b_data.fuzzy then
     return a_data.fuzzy > b_data.fuzzy
   end
 
-  -- Use filetype-local history as a late nudge after live query and fuzzy
-  -- matching have already narrowed the field.
+  -- Prefer items you actually accept often, but only after live-query,
+  -- source-specific, and context-aware ranking has already narrowed the field.
   if a_data.frecency ~= b_data.frecency then
     return a_data.frecency > b_data.frecency
   end
@@ -648,13 +729,13 @@ function M._on_completedone()
     return
   end
 
-  local key = completion_key(completed_item, vim.bo[vim.api.nvim_get_current_buf()].filetype)
+  local key = completion_key(completed_item, current_filetype())
   if not key then
     return
   end
 
   local record = M._ctx.completion_history[key] or { frequency = 0, accepted_at = 0 }
-  record.frequency = math.min(record.frequency + 1, history_frequency_cap)
+  record.frequency = record.frequency + 1
   record.accepted_at = vim.uv.now()
   M._ctx.completion_history[key] = record
   prune_history()
@@ -677,7 +758,7 @@ local function stop_snippet_source(source)
 
   local client = vim.lsp.get_client_by_id(source.client_id)
   if client then
-    vim.lsp.stop_client(source.client_id)
+    client:stop()
   end
 
   source.client_id = nil
@@ -722,7 +803,9 @@ local function collect_snippet_items(snippet_data, items, seen)
           items[#items + 1] = {
             label = prefix,
             kind = protocol.CompletionItemKind.Snippet,
-            menu = "[snip]",
+            labelDetails = {
+              description = "[snip]",
+            },
             detail = "snippet",
             data = {
               compl = {
@@ -894,7 +977,7 @@ function M._ensure_snippet_source(bufnr)
     return
   end
 
-  bufnr = vim._resolve_bufnr(bufnr)
+  bufnr = normalize_bufnr(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
     return
   end
