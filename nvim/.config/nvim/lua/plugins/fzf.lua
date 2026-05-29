@@ -355,8 +355,12 @@ map("n", "<leader>fQ", function()
 end, { desc = "Find quickfix stack" })
 
 map("n", "<leader>ft", function()
-  fzf.tabs()
-end, { desc = "Find tabs" })
+  fzf.grep({
+    search = [[\b(TODO|FIXME|NOTE|BUG|HACK|WARN|PERF|TEST|DEBUG|REVIEW|IDEA|OPTIMIZE|XXX)\b]],
+    no_esc = true,
+    prompt = "TODO> ",
+  })
+end, { desc = "Find TODO" })
 
 map("n", "<leader>fL", function()
   fzf.tags_live_grep()
