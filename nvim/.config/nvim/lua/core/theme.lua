@@ -12,7 +12,7 @@ M.accents = {
 	blue = "#89B4FA",
 	cyan = "#64B8B4",
 	mint = "#7CE0C2",
-	green = "#5FB36A",
+	green = "#A6E3A1",
 	lime = "#9ACD5A",
 	yellow = "#F9E2AF",
 	peach = "#FFB07C",
@@ -185,6 +185,8 @@ function M.colorscheme()
 	hl("WinBar", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinBarNC", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinSeparator", { fg = M.colors.gray })
+	hl("JumpCharLabel", { fg = M.colors.green })
+	hl("JumpCharDim", { fg = M.colors.gray })
 
 	vim.api.nvim_exec_autocmds("ColorScheme", { modeline = false, pattern = vim.g.colors_name })
 	M.clear_transparent()
