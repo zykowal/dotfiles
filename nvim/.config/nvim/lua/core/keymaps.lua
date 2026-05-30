@@ -51,6 +51,18 @@ vim.keymap.del("n", "grn", { silent = true })
 vim.keymap.del("n", "grr", { silent = true })
 vim.keymap.del("n", "grt", { silent = true })
 
-vim.keymap.set({ 'i', 'c' }, '<C-j>', [[pumvisible() ? "\<C-n>" : "\<C-j>"]], { expr = true })
-vim.keymap.set({ 'i', 'c' }, '<C-k>', [[pumvisible() ? "\<C-p>" : "\<C-k>"]], { expr = true })
-vim.keymap.set({ 'i', 'c' }, '<C-l>', [[pumvisible() ? "\<C-y>" : "\<Tab>"]], { expr = true })
+vim.keymap.set({ 'i', 'c' }, '<C-j>', function()
+  if vim.fn.pumvisible() ~= 0 then return "<C-n>" end
+  return "<C-j>"
+end, { expr = true })
+vim.keymap.set({ 'i', 'c' }, '<C-k>', function()
+  if vim.fn.pumvisible() ~= 0 then return "<C-p>" end
+  return "<C-k>"
+end, { expr = true })
+vim.keymap.set({ 'i', 'c' }, '<C-l>', function()
+  if vim.fn.pumvisible() ~= 0 then return "<C-y>" end
+  return require("neocodeium").accept()
+end, { expr = true })
+vim.keymap.set('i', '<C-s>',function()
+  return require("neocodeium").cycle_or_complete()
+end, { expr = true })

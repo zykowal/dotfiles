@@ -15,13 +15,15 @@ vim.pack.add({
 	{ src = gh("lewis6991/gitsigns.nvim") },
 	{ src = gh("stevearc/conform.nvim") },
 	{ src = gh("christoomey/vim-tmux-navigator") },
-	{ src = gh("supermaven-inc/supermaven-nvim") },
+	{ src = gh("monkoose/neocodeium") },
 	{ src = gh("kylechui/nvim-surround") },
 	{ src = gh("nvim-mini/mini.ai") },
 }, { confirm = false })
 
 require("core")
 require("plugins")
+
+require("neocodeium").setup()
 
 -- Enable UI2
 require('vim._core.ui2').enable()
