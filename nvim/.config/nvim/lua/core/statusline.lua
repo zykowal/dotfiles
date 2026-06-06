@@ -11,6 +11,7 @@ local nvim_set_hl = api.nvim_set_hl
 local nvim_buf_is_valid = api.nvim_buf_is_valid
 local nvim_create_augroup = api.nvim_create_augroup
 local nvim_create_autocmd = api.nvim_create_autocmd
+local nvim_buf_get_lines = api.nvim_buf_get_lines
 local nvim_get_current_win = api.nvim_get_current_win
 
 local diagnostic_get = vim.diagnostic.get
@@ -48,22 +49,22 @@ local mode_labels = {}
 local mode_highlights = {}
 
 for _, spec in ipairs({
-  { hl = "StatusModeNormal", label = "N", modes = { "n", "niI", "niR", "niV", "nt" } },
-  { hl = "StatusModeNormal", label = "O", modes = { "no", "nov", "noV", "no\22" } },
-  { hl = "StatusModeVisual", label = "V", modes = { "v" } },
-  { hl = "StatusModeVisual", label = "VL", modes = { "V" } },
-  { hl = "StatusModeVisual", label = "VB", modes = { "\22", "\22s" } },
-  { hl = "StatusModeSelect", label = "S", modes = { "s" } },
-  { hl = "StatusModeSelect", label = "SL", modes = { "S" } },
-  { hl = "StatusModeSelect", label = "SB", modes = { "\19" } },
-  { hl = "StatusModeInsert", label = "I", modes = { "i", "ic", "ix" } },
-  { hl = "StatusModeReplace", label = "R", modes = { "R", "Rc", "Rx" } },
-  { hl = "StatusModeReplace", label = "VR", modes = { "Rv" } },
-  { hl = "StatusModeCommand", label = "C", modes = { "c" } },
-  { hl = "StatusModeCommand", label = "EX", modes = { "cv", "ce" } },
-  { hl = "StatusModePrompt", label = "P", modes = { "r", "rm", "r?" } },
-  { hl = "StatusModeShell", label = "!", modes = { "!" } },
-  { hl = "StatusModeTerminal", label = "T", modes = { "t" } },
+  { hl = "StatusModeNormal", label = " ", modes = { "n", "niI", "niR", "niV", "nt" } },
+  { hl = "StatusModeNormal", label = " ", modes = { "no", "nov", "noV", "no\22" } },
+  { hl = "StatusModeVisual", label = " ", modes = { "v" } },
+  { hl = "StatusModeVisual", label = " ", modes = { "V" } },
+  { hl = "StatusModeVisual", label = " ", modes = { "\22", "\22s" } },
+  { hl = "StatusModeSelect", label = " ", modes = { "s" } },
+  { hl = "StatusModeSelect", label = " ", modes = { "S" } },
+  { hl = "StatusModeSelect", label = " ", modes = { "\19" } },
+  { hl = "StatusModeInsert", label = " ", modes = { "i", "ic", "ix" } },
+  { hl = "StatusModeReplace", label = " ", modes = { "R", "Rc", "Rx" } },
+  { hl = "StatusModeReplace", label = " ", modes = { "Rv" } },
+  { hl = "StatusModeCommand", label = " ", modes = { "c" } },
+  { hl = "StatusModeCommand", label = " ", modes = { "cv", "ce" } },
+  { hl = "StatusModePrompt", label = " ", modes = { "r", "rm", "r?" } },
+  { hl = "StatusModeShell", label = " ", modes = { "!" } },
+  { hl = "StatusModeTerminal", label = " ", modes = { "t" } },
 }) do
   for _, mode in ipairs(spec.modes) do
     mode_labels[mode] = spec.label
@@ -82,7 +83,7 @@ local function mode_highlight(mode)
 end
 
 local function mode_label(mode)
-  return string.format("%2s", mode_labels[mode] or mode)
+  return string.format(" %s", mode_labels[mode] or mode)
 end
 
 -- Create default highlights
@@ -107,7 +108,7 @@ H.section = function(group, text)
 end
 
 H.mode_section = function(mode)
-  return "%#" .. mode_highlight(mode) .. "#" .. mode_label(mode) .. ""
+  return "%#" .. mode_highlight(mode) .. "#" .. mode_label(mode)
 end
 
 H.request_redraw = function()
@@ -237,21 +238,14 @@ H.update_lsp = function(bufnr)
     return
   end
 
-  local names = {}
-  local seen = {}
   for _, client in ipairs(lsp_get_clients({ bufnr = bufnr })) do
-    if client.name and vim.tbl_get(client, "config", "_compl_source") ~= "snippet" and not seen[client.name] then
-      seen[client.name] = true
-      names[#names + 1] = client.name
+    if client.name and vim.tbl_get(client, "config", "_compl_source") ~= "snippet" then
+      vim.b[bufnr].statusline_lsp = " "
+      return
     end
   end
 
-  if #names == 0 then
-    vim.b[bufnr].statusline_lsp = ""
-    return
-  end
-
-  vim.b[bufnr].statusline_lsp = " " .. table_concat(names, ", ")
+  vim.b[bufnr].statusline_lsp = ""
 end
 
 H.lsp_label = function()
@@ -272,6 +266,16 @@ H.file_meta = function()
   end
 
   return table_concat(meta, " ")
+end
+
+H.location_label = function()
+  local bufnr = nvim_get_current_buf()
+  local line_nr = vim.fn.line(".")
+  local line = vim.fn.line(".")
+  local col = vim.fn.virtcol(".")
+  local progress = vim.fn.line("$") > 0 and math.floor((line / vim.fn.line("$")) * 100) or 0
+
+  return string.format("%4d:%-3d %2d%%%%", line, col, progress)
 end
 
 function M.build()
@@ -304,19 +308,20 @@ function M.build()
   parts[#parts + 1] = "%="
 
   local lsp = H.lsp_label()
-  if lsp ~= "" and width > 90 then
+  if lsp ~= "" then
     parts[#parts + 1] = H.section("StatusText", lsp)
-  elseif vim.bo.filetype ~= "" then
+  end
+
+  if vim.bo.filetype ~= "" then
     parts[#parts + 1] = H.section("StatusMeta", vim.bo.filetype)
   end
 
   local meta = H.file_meta()
-  if meta ~= "" and width > 120 then
+  if meta ~= "" then
     parts[#parts + 1] = H.section("StatusMeta", meta)
   end
 
-  parts[#parts + 1] = H.section("StatusText", "%l:%c")
-  parts[#parts + 1] = H.section("StatusText", "%p%%")
+  parts[#parts + 1] = H.section("StatusText", H.location_label())
 
   return table_concat(parts)
 end
@@ -378,6 +383,7 @@ H.create_autocommands = function()
   H.refresh_cache(nvim_get_current_buf())
 end
 
+
 -- Public setup to initialize statusline module
 M.setup = function()
   H.create_default_hl()
@@ -386,3 +392,4 @@ M.setup = function()
 end
 
 return M
+-- Custom statusline implementation with dynamic mode, git, diagnostics, and LSP info
