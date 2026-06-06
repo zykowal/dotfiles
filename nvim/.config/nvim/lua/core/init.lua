@@ -5,6 +5,7 @@ require("core.options")
 require("core.cmdline")
 
 require("core.theme").setup()
+require("core.session").setup()
 require("core.terminal").setup()
 require("core.center").setup()
 require("core.statusline").setup()
