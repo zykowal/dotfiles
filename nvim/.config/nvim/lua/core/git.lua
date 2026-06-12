@@ -15,6 +15,7 @@ local command_names = {
   "log",
   "pull",
   "push",
+  "rebase",
   "restore",
   "show",
   "stash",
@@ -142,6 +143,29 @@ local function result_output(result)
   return table.concat(parts, "\n")
 end
 
+local function apply_output_panel_opts(win)
+  if not vim.api.nvim_win_is_valid(win) then
+    return
+  end
+
+  local opts = {
+    colorcolumn = "",
+    cursorline = true,
+    foldcolumn = "0",
+    foldenable = false,
+    list = false,
+    signcolumn = "no",
+    spell = false,
+    statuscolumn = "",
+    winfixheight = true,
+    wrap = false,
+  }
+
+  for name, value in pairs(opts) do
+    pcall(vim.api.nvim_set_option_value, name, value, { win = win })
+  end
+end
+
 local function open_output(title, text, opts)
   opts = opts or {}
   output_count = output_count + 1
@@ -152,8 +176,10 @@ local function open_output(title, text, opts)
   pcall(vim.api.nvim_buf_set_name, buf, name)
   vim.b[buf].core_git_output = true
   vim.b[buf].core_git_root = opts.root
+  vim.b[buf].core_git_previous_buf = opts.previous_buf
   vim.bo[buf].buftype = "nofile"
   vim.bo[buf].bufhidden = "hide"
+  vim.bo[buf].buflisted = false
   vim.bo[buf].swapfile = false
   vim.bo[buf].filetype = opts.filetype or "git"
   vim.bo[buf].modifiable = true
@@ -165,7 +191,7 @@ local function open_output(title, text, opts)
   else
     local height = math.max(1, math.floor(vim.api.nvim_win_get_height(0) / 2))
 
-    vim.cmd("belowright split")
+    vim.cmd("keepalt belowright split")
     output_win = vim.api.nvim_get_current_win()
     vim.api.nvim_win_set_height(output_win, height)
   end
@@ -173,8 +199,9 @@ local function open_output(title, text, opts)
   local old_buf = vim.api.nvim_win_get_buf(output_win)
 
   vim.api.nvim_win_set_buf(output_win, buf)
+  apply_output_panel_opts(output_win)
 
-  if vim.api.nvim_buf_is_valid(old_buf) and vim.b[old_buf].core_git_output then
+  if vim.api.nvim_buf_is_valid(old_buf) and vim.b[old_buf].core_git_output and old_buf ~= opts.previous_buf then
     pcall(vim.api.nvim_buf_delete, old_buf, { force = true })
   end
 
@@ -191,6 +218,25 @@ end
 
 local function close_output_buffer(buf)
   if not vim.api.nvim_buf_is_valid(buf) then
+    return
+  end
+
+  local previous_buf = vim.b[buf].core_git_previous_buf
+
+  if previous_buf and vim.api.nvim_buf_is_valid(previous_buf) then
+    for _, win in ipairs(vim.fn.win_findbuf(buf)) do
+      if vim.api.nvim_win_is_valid(win) then
+        if win == output_win then
+          vim.api.nvim_win_set_buf(win, previous_buf)
+          apply_output_panel_opts(win)
+        end
+      end
+    end
+
+    if vim.api.nvim_buf_is_valid(buf) then
+      pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+
     return
   end
 
@@ -278,6 +324,29 @@ local function run_git(args, opts)
   end)
 end
 
+local function open_git_terminal(args)
+  local expanded = expand_args(args)
+
+  if not expanded then
+    return
+  end
+
+  local root = git_root()
+
+  if not root then
+    return
+  end
+
+  local height = math.max(1, math.floor(vim.api.nvim_win_get_height(0) / 2))
+
+  vim.cmd("keepalt belowright split")
+  vim.cmd.lcd(vim.fn.fnameescape(root))
+  vim.api.nvim_win_set_height(0, height)
+  vim.cmd.terminal(vim.list_extend({ "git" }, expanded))
+  vim.bo.buflisted = false
+  vim.cmd.startinsert()
+end
+
 local function add_commented(out, title, text)
   out[#out + 1] = "#"
   out[#out + 1] = "# " .. title
@@ -316,6 +385,40 @@ local function has_arg(args, value)
   end
 
   return false
+end
+
+local function has_prefixed_arg(args, prefix)
+  for _, arg in ipairs(args) do
+    if arg:sub(1, #prefix) == prefix then
+      return true
+    end
+  end
+
+  return false
+end
+
+local function has_staged_changes(root)
+  return git_sync({ "diff", "--cached", "--quiet" }, root).code ~= 0
+end
+
+local function has_head(root)
+  return git_sync({ "rev-parse", "--verify", "--quiet", "HEAD" }, root).code == 0
+end
+
+local function has_tracked_worktree_changes(root)
+  return git_sync({ "diff", "--quiet" }, root).code ~= 0
+end
+
+local function commit_has_content(root, args)
+  if has_arg(args, "--amend") or has_arg(args, "--allow-empty") or has_prefixed_arg(args, "--allow-empty=") then
+    return true
+  end
+
+  if has_arg(args, "-a") or has_arg(args, "--all") then
+    return has_staged_changes(root) or has_tracked_worktree_changes(root)
+  end
+
+  return has_staged_changes(root)
 end
 
 local function checkout_needs_confirm(args)
@@ -466,6 +569,11 @@ local function open_commit(args)
     return
   end
 
+  if not commit_has_content(root, args) then
+    vim.notify("No staged changes to commit", vim.log.levels.WARN)
+    return
+  end
+
   local dir = vim.fn.tempname()
 
   vim.fn.mkdir(dir, "p")
@@ -480,6 +588,7 @@ local function open_commit(args)
 
   vim.bo[bufnr].filetype = "gitcommit"
   vim.bo[bufnr].bufhidden = "hide"
+  vim.bo[bufnr].buflisted = false
   vim.bo[bufnr].swapfile = false
   vim.bo[bufnr].textwidth = 72
 
@@ -542,7 +651,132 @@ local function log_args(args)
 end
 
 local function commit_from_log_line(line)
-  return line:match("[%*|/\\ _%.%-]*([0-9a-fA-F]+)")
+  local commit = line:match("^[%s%*|/\\_%.%-]*commit%s+([0-9a-fA-F]+)")
+
+  if commit then
+    return commit
+  end
+
+  commit = line:match("^[%s%*|/\\_%.%-]*([0-9a-fA-F]+)%s")
+
+  if commit and #commit >= 4 then
+    return commit
+  end
+
+  return nil
+end
+
+local function blob_hash_under_cursor()
+  local line = vim.api.nvim_get_current_line()
+  local old, new = line:match("^index%s+([0-9a-fA-F]+)%.%.([0-9a-fA-F]+)")
+
+  if not old or not new then
+    return nil
+  end
+
+  local col = vim.api.nvim_win_get_cursor(0)[2] + 1
+  local old_start = line:find(old, 1, true)
+  local new_start = line:find(new, old_start + #old + 2, true)
+
+  if col >= old_start and col < old_start + #old then
+    return old
+  end
+
+  if col >= new_start and col < new_start + #new then
+    return new
+  end
+
+  return nil
+end
+
+local function diff_file_under_cursor()
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  local buf = vim.api.nvim_get_current_buf()
+
+  for lnum = row, 1, -1 do
+    local line = vim.api.nvim_buf_get_lines(buf, lnum - 1, lnum, false)[1] or ""
+    local old, new = line:match("^diff %-%-git a/(.-) b/(.+)$")
+
+    if old or new then
+      return new ~= "/dev/null" and new or old
+    end
+  end
+
+  return nil
+end
+
+local function filetype_for_blob(path)
+  local ok, filetype = pcall(vim.filetype.match, { filename = path })
+
+  if ok then
+    return filetype
+  end
+
+  return nil
+end
+
+local function setup_commit_details_buffer(buf)
+  vim.keymap.set("n", "o", function()
+    local hash = blob_hash_under_cursor()
+
+    if not hash then
+      vim.notify("No blob hash found under cursor", vim.log.levels.WARN)
+      return
+    end
+
+    if hash:match("^0+$") then
+      vim.notify("No blob exists for " .. hash, vim.log.levels.WARN)
+      return
+    end
+
+    local root = output_root(buf)
+
+    if not root then
+      return
+    end
+
+    local result = git_sync({ "cat-file", "-p", hash }, root)
+    local file = diff_file_under_cursor()
+    local title = "git cat-file -p " .. hash
+
+    if result.code ~= 0 then
+      open_output(title .. " failed", result_output(result), { filetype = "git", root = root, previous_buf = buf })
+      return
+    end
+
+    open_output(title, result.stdout, { filetype = filetype_for_blob(file), root = root, previous_buf = buf })
+  end, { buffer = buf, desc = "Git show blob", nowait = true })
+end
+
+local function open_commit_details(root, commit, previous_buf)
+  local meta = git_sync({ "show", "--no-patch", "--format=fuller", commit }, root)
+  local stat = git_sync({ "show", "--stat", "--format=", commit }, root)
+  local diff = git_sync({ "show", "--format=", "--patch", commit }, root)
+  local title = "git show " .. commit
+
+  if meta.code ~= 0 then
+    open_output(title .. " failed", result_output(meta), { filetype = "git", root = root, previous_buf = previous_buf })
+    return
+  end
+
+  if stat.code ~= 0 then
+    open_output(title .. " failed", result_output(stat), { filetype = "git", root = root, previous_buf = previous_buf })
+    return
+  end
+
+  if diff.code ~= 0 then
+    open_output(title .. " failed", result_output(diff), { filetype = "git", root = root, previous_buf = previous_buf })
+    return
+  end
+
+  local content = table.concat({
+    trim(meta.stdout),
+    "---",
+    trim(stat.stdout) ~= "" and stat.stdout or "(none)",
+    trim(diff.stdout) ~= "" and diff.stdout or "(none)",
+  }, "\n")
+
+  open_output(title, content, { filetype = "git", root = root, previous_buf = previous_buf, on_open = setup_commit_details_buffer })
 end
 
 local function setup_log_buffer(buf)
@@ -558,7 +792,13 @@ local function setup_log_buffer(buf)
       return
     end
 
-    run_git({ "show", commit }, { output = true, filetype = "git", root = output_root(buf) })
+    local root = output_root(buf)
+
+    if not root then
+      return
+    end
+
+    open_commit_details(root, commit, buf)
   end
 
   local function copy_commit_under_cursor()
@@ -578,12 +818,13 @@ local function setup_log_buffer(buf)
   vim.keymap.set("n", "y", copy_commit_under_cursor, { buffer = buf, desc = "Copy commit hash", nowait = true })
 end
 
-local function file_from_status_line(line)
+local function status_info_from_line(line)
   if line:match("^##") then
     return nil
   end
 
   local file = line:match("^..%s+(.+)$")
+  local old_file
 
   if not file then
     return nil
@@ -592,30 +833,325 @@ local function file_from_status_line(line)
   file = file:gsub('^"(.*)"$', "%1")
 
   if file:find(" -> ", 1, true) then
+    old_file = file:match("^(.-)%s%->%s")
     file = file:match("%s%->%s(.+)$") or file
+    old_file = old_file and old_file:gsub('^"(.*)"$', "%1")
     file = file:gsub('^"(.*)"$', "%1")
   end
 
-  return file
+  return {
+    file = file,
+    old_file = old_file or file,
+    index = line:sub(1, 1),
+    worktree = line:sub(2, 2),
+    untracked = line:sub(1, 2) == "??",
+  }
+end
+
+local function filetype_for_path(path)
+  local ok, filetype = pcall(vim.filetype.match, { filename = path })
+
+  if ok then
+    return filetype
+  end
+
+  return nil
+end
+
+local function blob_lines(root, file)
+  local result = git_sync({ "show", "HEAD:" .. file }, root)
+
+  if result.code ~= 0 then
+    return { "" }
+  end
+
+  return lines(result.stdout)
+end
+
+local function worktree_lines(file)
+  local ok, content = pcall(vim.fn.readfile, file)
+
+  if ok then
+    return content
+  end
+
+  return { "" }
+end
+
+local function setup_diff_buffer(buf, name, content, filetype)
+  pcall(vim.api.nvim_buf_set_name, buf, name)
+  vim.bo[buf].buftype = "nofile"
+  vim.bo[buf].bufhidden = "hide"
+  vim.bo[buf].buflisted = false
+  vim.bo[buf].swapfile = false
+  vim.bo[buf].filetype = filetype or ""
+  vim.bo[buf].modifiable = true
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, content)
+  vim.bo[buf].modifiable = false
+end
+
+local function open_status_diff(root, info)
+  local filetype = filetype_for_path(info.file)
+  local left_buf = vim.api.nvim_create_buf(false, true)
+  local left_name = ("git://HEAD/%s"):format(info.old_file)
+  local right_file = vim.fs.joinpath(root, info.file)
+
+  setup_diff_buffer(left_buf, left_name, blob_lines(root, info.old_file), filetype)
+
+  if vim.api.nvim_get_current_win() == output_win then
+    output_win = -1
+  end
+
+  vim.api.nvim_win_set_buf(0, left_buf)
+  apply_output_panel_opts(0)
+  vim.cmd.diffthis()
+
+  vim.cmd("rightbelow vertical split")
+
+  if vim.fn.filereadable(right_file) == 1 then
+    vim.cmd.edit(vim.fn.fnameescape(right_file))
+  else
+    local right_buf = vim.api.nvim_create_buf(false, true)
+    local right_name = ("git://WORKTREE/%s"):format(info.file)
+
+    setup_diff_buffer(right_buf, right_name, worktree_lines(right_file), filetype)
+    vim.api.nvim_win_set_buf(0, right_buf)
+  end
+
+  vim.cmd.diffthis()
 end
 
 local function setup_status_buffer(buf)
-  vim.keymap.set("n", "o", function()
-    local file = file_from_status_line(vim.api.nvim_get_current_line())
+  local function info_under_cursor()
+    local info = status_info_from_line(vim.api.nvim_get_current_line())
 
-    if not file then
+    if not info then
       vim.notify("No file found on current line", vim.log.levels.WARN)
       return
     end
 
+    return info
+  end
+
+  local function restore_status_cursor(file, fallback_row)
+    local row = fallback_row or 1
+
+    if file then
+      local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+      for lnum, line in ipairs(lines) do
+        local info = status_info_from_line(line)
+
+        if info and info.file == file then
+          row = lnum
+          break
+        end
+      end
+    end
+
+    row = math.min(row, math.max(1, vim.api.nvim_buf_line_count(0)))
+    pcall(vim.api.nvim_win_set_cursor, 0, { row, 0 })
+  end
+
+  local function refresh_status(root, info, fallback_row)
+    run_git(status_args({ "status" }), {
+      output = true,
+      filetype = "git",
+      root = root,
+      on_open = function(status_buf)
+        setup_status_buffer(status_buf)
+        restore_status_cursor(info and info.file or nil, fallback_row)
+      end,
+    })
+  end
+
+  local function run_status_action(root, args, info)
+    local title = output_title(args)
+    local fallback_row = vim.api.nvim_win_get_cursor(0)[1]
+
+    vim.system(vim.list_extend({ "git" }, args), { cwd = root, text = true }, function(result)
+      vim.schedule(function()
+        local output = result_output(result)
+
+        if result.code == 0 then
+          local clean = trim(output)
+
+          vim.notify(clean ~= "" and clean or title .. " finished", vim.log.levels.INFO)
+          refresh_status(root, info, fallback_row)
+        else
+          open_output(title .. " failed", output, { filetype = "git", root = root })
+        end
+      end)
+    end)
+  end
+
+  local function unstage_file(root, info)
+    if info.index == "A" and not has_head(root) then
+      run_status_action(root, { "rm", "--cached", "--", info.file }, info)
+      return
+    end
+
+    run_status_action(root, { "restore", "--staged", "--", info.file }, info)
+  end
+
+  local function root_for_status()
     local root = output_root(buf)
 
     if not root then
       return
     end
 
-    vim.cmd.edit(vim.fn.fnameescape(vim.fs.joinpath(root, file)))
+    return root
+  end
+
+  vim.keymap.set("n", "o", function()
+    local info = info_under_cursor()
+    local root = root_for_status()
+
+    if not info or not root then
+      return
+    end
+
+    vim.cmd.edit(vim.fn.fnameescape(vim.fs.joinpath(root, info.file)))
   end, { buffer = buf, desc = "Open Git status file", nowait = true })
+
+  vim.keymap.set("n", "a", function()
+    local info = info_under_cursor()
+    local root = root_for_status()
+
+    if not info or not root then
+      return
+    end
+
+    run_status_action(root, { "add", "--", info.file }, info)
+  end, { buffer = buf, desc = "Git add file", nowait = true })
+
+  vim.keymap.set("n", "A", function()
+    local root = root_for_status()
+
+    if not root then
+      return
+    end
+
+    run_status_action(root, { "add", "--all" })
+  end, { buffer = buf, desc = "Git add all files", nowait = true })
+
+  vim.keymap.set("n", "u", function()
+    local info = info_under_cursor()
+    local root = root_for_status()
+
+    if not info or not root then
+      return
+    end
+
+    if info.untracked or info.index == " " then
+      vim.notify("File is not staged: " .. info.file, vim.log.levels.WARN)
+      return
+    end
+
+    unstage_file(root, info)
+  end, { buffer = buf, desc = "Git unstage file", nowait = true })
+
+  vim.keymap.set("n", "U", function()
+    local root = root_for_status()
+
+    if not root then
+      return
+    end
+
+    if not has_staged_changes(root) then
+      vim.notify("No staged changes to unstage", vim.log.levels.WARN)
+      return
+    end
+
+    if not has_head(root) then
+      run_status_action(root, { "rm", "--cached", "-r", "--", "." })
+      return
+    end
+
+    run_status_action(root, { "restore", "--staged", "--", "." })
+  end, { buffer = buf, desc = "Git unstage all files", nowait = true })
+
+  vim.keymap.set("n", "r", function()
+    local info = info_under_cursor()
+    local root = root_for_status()
+
+    if not info or not root then
+      return
+    end
+
+    if info.untracked then
+      vim.notify("Cannot restore untracked file: " .. info.file, vim.log.levels.WARN)
+      return
+    end
+
+    if vim.fn.confirm("Discard changes to " .. info.file .. "?", "&No\n&Yes", 1) ~= 2 then
+      return
+    end
+
+    if info.index == "A" and info.worktree == " " then
+      unstage_file(root, info)
+      return
+    end
+
+    run_status_action(root, { "restore", "--staged", "--worktree", "--", info.file }, info)
+  end, { buffer = buf, desc = "Git restore file", nowait = true })
+
+  vim.keymap.set("n", "x", function()
+    local info = info_under_cursor()
+    local root = root_for_status()
+
+    if not info or not root then
+      return
+    end
+
+    if vim.fn.confirm("Discard all changes to " .. info.file .. "?", "&No\n&Yes", 1) ~= 2 then
+      return
+    end
+
+    if info.untracked then
+      run_status_action(root, { "clean", "-f", "--", info.file }, info)
+      return
+    end
+
+    if info.index == "A" then
+      run_status_action(root, { "rm", "-f", "--cached", "--", info.file }, info)
+      return
+    end
+
+    run_status_action(root, { "restore", "--staged", "--worktree", "--", info.file }, info)
+  end, { buffer = buf, desc = "Git discard file", nowait = true })
+
+  vim.keymap.set("n", "d", function()
+    local info = info_under_cursor()
+    local root = root_for_status()
+
+    if not info or not root then
+      return
+    end
+
+    if info.untracked then
+      vim.notify("No git diff for untracked file: " .. info.file, vim.log.levels.WARN)
+      return
+    end
+
+    open_status_diff(root, info)
+  end, { buffer = buf, desc = "Git diff file", nowait = true })
+
+  vim.keymap.set("n", "c", function()
+    local root = root_for_status()
+
+    if not root then
+      return
+    end
+
+    if not commit_has_content(root, {}) then
+      vim.notify("No staged changes to commit", vim.log.levels.WARN)
+      return
+    end
+
+    open_commit({})
+  end, { buffer = buf, desc = "Git commit staged changes", nowait = true })
 end
 
 function M.run(args, opts)
@@ -630,6 +1166,11 @@ function M.run(args, opts)
 
   if cmd == "commit" then
     open_commit(slice(args, 2))
+    return
+  end
+
+  if cmd == "rebase" then
+    open_git_terminal(args)
     return
   end
 
@@ -704,7 +1245,7 @@ function M.setup()
     nargs = "*",
   })
 
-  vim.keymap.set("n", "<leader>lg", ":Git ", { desc = "Git" })
+  vim.keymap.set("n", "<leader>lg", ":Git ", { desc = "Run Git command" })
 end
 
 return M
