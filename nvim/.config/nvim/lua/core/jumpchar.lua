@@ -482,6 +482,11 @@ function M.setup()
   vim.keymap.set({ "n", "x" }, "s", function()
     M.jump()
   end, { desc = "Jump to visible character", silent = true })
+
+  -- now `s` is for surround.
+  vim.keymap.set("o", "f", function()
+    M.jump()
+  end, { desc = "Jump to visible character", silent = true })
 end
 
 return M
