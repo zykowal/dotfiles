@@ -125,10 +125,18 @@ function H.apply_terminal_opts(buf, win)
 end
 
 function H.open_top_split()
-  local current_height = vim.api.nvim_win_get_height(0)
-  local target_height = math.max(1, math.floor(current_height / 2))
+  local total_height = 0
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local config = vim.api.nvim_win_get_config(win)
+    if config.relative == "" then
+      local pos = vim.api.nvim_win_get_position(win)
+      total_height = math.max(total_height, pos[1] + vim.api.nvim_win_get_height(win))
+    end
+  end
 
-  vim.cmd("aboveleft split")
+  local target_height = math.max(1, math.floor(total_height / 2))
+
+  vim.cmd("topleft split")
 
   local win = vim.api.nvim_get_current_win()
   vim.api.nvim_win_set_height(win, target_height)
