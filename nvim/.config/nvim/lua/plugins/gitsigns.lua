@@ -8,11 +8,11 @@ require("gitsigns").setup({
       vim.keymap.set(mode, l, r, opts)
     end
 
-    map("n", "]g", function()
+    map("n", "]h", function()
       gitsigns.nav_hunk("next")
     end, { desc = "Next hunk" })
 
-    map("n", "[g", function()
+    map("n", "[h", function()
       gitsigns.nav_hunk("prev")
     end, { desc = "Prev hunk" })
 
@@ -39,6 +39,6 @@ require("gitsigns").setup({
 
     map("n", "<leader>gT", gitsigns.toggle_current_line_blame, { desc = "Toggle blame" })
 
-    map({ "o", "x" }, "ig", gitsigns.select_hunk, { desc = "Select hunk" })
+    map({ "o", "x" }, "ih", gitsigns.select_hunk, { desc = "Select hunk" })
   end,
 })
