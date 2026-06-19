@@ -1,3 +1,5 @@
+vim.g.nvim_surround_no_insert_mappings = true
+
 require("nvim-surround").setup({
   surrounds = {
     w = {
