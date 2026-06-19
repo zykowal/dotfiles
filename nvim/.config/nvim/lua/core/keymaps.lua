@@ -62,8 +62,5 @@ vim.keymap.set({ 'i', 'c' }, '<C-k>', function()
 end, { expr = true })
 vim.keymap.set({ 'i', 'c' }, '<C-l>', function()
   if vim.fn.pumvisible() ~= 0 then return "<C-y>" end
-  return require("neocodeium").accept()
-end, { expr = true })
-vim.keymap.set('i', '<C-s>',function()
-  return require("neocodeium").cycle_or_complete()
+  return "<C-l>"
 end, { expr = true })
