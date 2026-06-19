@@ -890,31 +890,74 @@ local function setup_diff_buffer(buf, name, content, filetype)
   vim.bo[buf].modifiable = false
 end
 
+local function close_status_diff(left_buf, right_win, right_buf, status_buf, status_win)
+  for _, win in ipairs({ status_win, right_win }) do
+    if win and vim.api.nvim_win_is_valid(win) then
+      pcall(vim.api.nvim_win_call, win, function()
+        vim.cmd.diffoff()
+      end)
+    end
+  end
+
+  if right_win and vim.api.nvim_win_is_valid(right_win) then
+    pcall(vim.api.nvim_win_close, right_win, false)
+  end
+
+  if vim.api.nvim_win_is_valid(status_win) and vim.api.nvim_buf_is_valid(status_buf) then
+    vim.api.nvim_win_set_buf(status_win, status_buf)
+    vim.api.nvim_set_current_win(status_win)
+    apply_output_panel_opts(status_win)
+
+    if vim.b[status_buf].core_git_output then
+      output_win = status_win
+    end
+  end
+
+  if vim.api.nvim_buf_is_valid(left_buf) then
+    pcall(vim.api.nvim_buf_delete, left_buf, { force = true })
+  end
+
+  if right_buf and vim.api.nvim_buf_is_valid(right_buf) and vim.b[right_buf].core_git_status_diff_temp then
+    pcall(vim.api.nvim_buf_delete, right_buf, { force = true })
+  end
+end
+
 local function open_status_diff(root, info)
   local filetype = filetype_for_path(info.file)
+  local status_buf = vim.api.nvim_get_current_buf()
+  local status_win = vim.api.nvim_get_current_win()
   local left_buf = vim.api.nvim_create_buf(false, true)
   local left_name = ("git://HEAD/%s"):format(info.old_file)
   local right_file = vim.fs.joinpath(root, info.file)
+  local right_buf
+  local right_win
 
   setup_diff_buffer(left_buf, left_name, blob_lines(root, info.old_file), filetype)
 
-  if vim.api.nvim_get_current_win() == output_win then
+  vim.keymap.set("n", "q", function()
+    close_status_diff(left_buf, right_win, right_buf, status_buf, status_win)
+  end, { buffer = left_buf, desc = "Close Git diff", nowait = true })
+
+  if status_win == output_win then
     output_win = -1
   end
 
-  vim.api.nvim_win_set_buf(0, left_buf)
-  apply_output_panel_opts(0)
+  vim.api.nvim_win_set_buf(status_win, left_buf)
+  apply_output_panel_opts(status_win)
   vim.cmd.diffthis()
 
   vim.cmd("rightbelow vertical split")
+  right_win = vim.api.nvim_get_current_win()
 
   if vim.fn.filereadable(right_file) == 1 then
     vim.cmd.edit(vim.fn.fnameescape(right_file))
+    right_buf = vim.api.nvim_get_current_buf()
   else
-    local right_buf = vim.api.nvim_create_buf(false, true)
+    right_buf = vim.api.nvim_create_buf(false, true)
     local right_name = ("git://WORKTREE/%s"):format(info.file)
 
     setup_diff_buffer(right_buf, right_name, worktree_lines(right_file), filetype)
+    vim.b[right_buf].core_git_status_diff_temp = true
     vim.api.nvim_win_set_buf(0, right_buf)
   end
 
@@ -1245,7 +1288,15 @@ function M.setup()
     nargs = "*",
   })
 
-  vim.keymap.set("n", "<leader>lg", ":Git ", { desc = "Run Git command" })
+  vim.keymap.set("n", "<C-g>b", "<cmd>Git branch -a<CR>", { desc = "Git branch" })
+  vim.keymap.set("n", "<C-g>s", "<cmd>Git status<CR>", { desc = "Git status" })
+  vim.keymap.set("n", "<C-g>S", ":Git stash ", { desc = "Git stash" })
+  vim.keymap.set("n", "<C-g>c", ":Git checkout ", { desc = "Git checkout" })
+  vim.keymap.set("n", "<C-g>r", ":Git rebase ", { desc = "Git rebase" })
+  vim.keymap.set("n", "<C-g>f", "<cmd>Git fetch -atp<CR>", { desc = "Git fetch" })
+  vim.keymap.set("n", "<C-g>l", "<cmd>Git log<CR>", { desc = "Git log" })
+  vim.keymap.set("n", "<C-g>p", "<cmd>Git pull<CR>", { desc = "Git pull" })
+  vim.keymap.set("n", "<C-g>P", "<cmd>Git push<CR>", { desc = "Git push" })
 end
 
 return M
