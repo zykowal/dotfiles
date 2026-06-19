@@ -21,6 +21,7 @@ vim.pack.add({
 
 require("core")
 require("plugins")
+require("lsp")
 
 -- Enable UI2
 require('vim._core.ui2').enable()

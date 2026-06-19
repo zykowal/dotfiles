@@ -1,0 +1,5 @@
+require("lsp.cpp")
+require("lsp.go")
+require("lsp.rust")
+require("lsp.typescript")
+require("lsp.lua")
