@@ -3,6 +3,7 @@ vim.keymap.set("n", "H", "^")
 vim.keymap.set("n", "L", "$")
 vim.keymap.set("x", "H", "^")
 vim.keymap.set("x", "L", "$")
+vim.keymap.set("n", "<C-a>", "ggVG", { desc = "Select all" })
 
 vim.keymap.set("i", "<C-f>", "<Right>", { desc = "Move cursor right" })
 vim.keymap.set("i", "<C-b>", "<Left>", { desc = "Move cursor left" })
