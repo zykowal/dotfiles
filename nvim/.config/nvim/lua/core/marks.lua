@@ -12,7 +12,7 @@ local default_config = {
     clear_line = "mc",
     delete_latest = "md",
     clear_all = "mC",
-    list = "mm",
+    select = "ms",
   },
   map_opts = { silent = true },
   notify = true,
@@ -289,7 +289,7 @@ function M.clear_all()
   notify("Cleared all marks")
 end
 
-function M.list()
+function M.select()
   local marks = get_marks()
 
   if #marks == 0 then
@@ -327,7 +327,7 @@ function M.setup(user_config)
   map(mappings.clear_line, M.clear_line, "Clear mark on current line")
   map(mappings.delete_latest, M.delete_latest, "Delete latest mark")
   map(mappings.clear_all, M.clear_all, "Clear all marks")
-  map(mappings.list, M.list, "List marks")
+  map(mappings.select, M.select, "Select marks")
 end
 
 return M
