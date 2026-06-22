@@ -119,23 +119,6 @@ map("n", "<C-e>", function()
     return
   end
 
-  local has_tags_file = false
-  for _, tagfile in ipairs(vim.fn.tagfiles()) do
-    if vim.fn.filereadable(tagfile) == 1 then
-      has_tags_file = true
-      break
-    end
-  end
-
-  if has_tags_file == false then
-    has_tags_file = vim.fn.filereadable(vim.fs.joinpath(vim.uv.cwd(), "tags")) == 1
-  end
-
-  if has_tags_file then
-    fzf.tags()
-    return
-  end
-
   fzf.live_grep_native()
 end, { desc = "Workspace symbols or grep" })
 
