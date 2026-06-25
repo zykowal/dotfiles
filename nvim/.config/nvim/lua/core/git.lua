@@ -3,41 +3,33 @@ local M = {}
 local output_count = 0
 local output_win = -1
 local commit_states = {}
+local git_root_cache = {}
+local run_git
+local setup_branch_buffer
+local setup_status_buffer
 local setup_output_buffer
+local status_args
 
 local command_names = {
-  "add",
   "branch",
-  "checkout",
   "commit",
-  "diff",
   "fetch",
   "log",
   "pull",
   "push",
-  "rebase",
-  "restore",
-  "show",
-  "stash",
   "status",
 }
 
 local output_commands = {
   branch = true,
-  diff = true,
   log = true,
-  show = true,
-  stash = true,
   status = true,
 }
 
 local notify_commands = {
-  add = true,
-  checkout = true,
   fetch = true,
   pull = true,
   push = true,
-  restore = true,
 }
 
 local function trim(text)
@@ -59,7 +51,13 @@ local function lines(text)
     return { "" }
   end
 
-  return vim.split(text:gsub("\r\n", "\n"), "\n", { plain = true })
+  local ret = vim.split(text:gsub("\r\n", "\n"), "\n", { plain = true })
+
+  if ret[#ret] == "" then
+    table.remove(ret)
+  end
+
+  return #ret > 0 and ret or { "" }
 end
 
 local function current_file()
@@ -89,6 +87,14 @@ local function git_sync(args, cwd)
   return vim.system(vim.list_extend({ "git" }, args), { cwd = cwd, text = true }):wait()
 end
 
+local function git_async(args, cwd, callback)
+  vim.system(vim.list_extend({ "git" }, args), { cwd = cwd, text = true }, function(result)
+    vim.schedule(function()
+      callback(result)
+    end)
+  end)
+end
+
 local function git_root()
   if vim.fn.executable("git") ~= 1 then
     vim.notify("git executable not found", vim.log.levels.ERROR)
@@ -97,10 +103,17 @@ local function git_root()
 
   for _, dir in ipairs(start_dirs()) do
     if dir and dir ~= "" and vim.fn.isdirectory(dir) == 1 then
+      if git_root_cache[dir] and vim.fn.isdirectory(git_root_cache[dir]) == 1 then
+        return git_root_cache[dir]
+      end
+
       local result = git_sync({ "rev-parse", "--show-toplevel" }, dir)
 
       if result.code == 0 then
-        return trim(result.stdout)
+        local root = trim(result.stdout)
+
+        git_root_cache[dir] = root
+        return root
       end
     end
   end
@@ -175,6 +188,7 @@ local function open_output(title, text, opts)
 
   pcall(vim.api.nvim_buf_set_name, buf, name)
   vim.b[buf].core_git_output = true
+  vim.b[buf].core_git_panel = opts.panel
   vim.b[buf].core_git_root = opts.root
   vim.b[buf].core_git_previous_buf = opts.previous_buf
   vim.bo[buf].buftype = "nofile"
@@ -277,7 +291,38 @@ local function output_root(buf)
   return git_root()
 end
 
-local function run_git(args, opts)
+local function refresh_panel(panel, root)
+  if not vim.api.nvim_win_is_valid(output_win) then
+    return
+  end
+
+  local buf = vim.api.nvim_win_get_buf(output_win)
+
+  if not vim.api.nvim_buf_is_valid(buf) or vim.b[buf].core_git_panel ~= panel then
+    return
+  end
+
+  if panel == "branch" then
+    run_git({ "branch", "-a" }, { output = true, filetype = "git", root = root, panel = "branch", on_open = setup_branch_buffer })
+  elseif panel == "status" then
+    run_git(status_args({ "status" }), { output = true, filetype = "git", root = root, panel = "status", on_open = setup_status_buffer })
+  end
+end
+
+local function open_status_panel(root)
+  run_git(status_args({ "status" }), { output = true, filetype = "git", root = root, panel = "status", on_open = setup_status_buffer })
+end
+
+local function refresh_open_panels_after(cmd, root)
+  if cmd == "fetch" then
+    refresh_panel("branch", root)
+  elseif cmd == "pull" then
+    refresh_panel("status", root)
+    refresh_panel("branch", root)
+  end
+end
+
+run_git = function(args, opts)
   opts = opts or {}
 
   local expanded = expand_args(args)
@@ -290,6 +335,10 @@ local function run_git(args, opts)
 
   if not root then
     return
+  end
+
+  if opts.notify_start then
+    vim.notify(output_title(expanded) .. " started", vim.log.levels.INFO)
   end
 
   vim.system(vim.list_extend({ "git" }, expanded), { cwd = root, text = true }, function(result)
@@ -317,6 +366,10 @@ local function run_git(args, opts)
         else
           open_output(title, output, vim.tbl_extend("force", opts, { root = root }))
         end
+
+        if opts.refresh_after then
+          refresh_open_panels_after(opts.refresh_after, root)
+        end
       else
         open_output(title .. " failed", output, vim.tbl_extend("force", opts, { root = root }))
       end
@@ -324,27 +377,57 @@ local function run_git(args, opts)
   end)
 end
 
-local function open_git_terminal(args)
-  local expanded = expand_args(args)
+local function push_has_no_upstream(result)
+  local output = result_output(result)
 
-  if not expanded then
-    return
-  end
+  return output:find("has no upstream branch", 1, true) ~= nil
+end
 
+local function run_push(args)
   local root = git_root()
 
   if not root then
     return
   end
 
-  local height = math.max(1, math.floor(vim.api.nvim_win_get_height(0) / 2))
+  local title = output_title(args)
 
-  vim.cmd("keepalt belowright split")
-  vim.cmd.lcd(vim.fn.fnameescape(root))
-  vim.api.nvim_win_set_height(0, height)
-  vim.cmd.terminal(vim.list_extend({ "git" }, expanded))
-  vim.bo.buflisted = false
-  vim.cmd.startinsert()
+  vim.notify(title .. " started", vim.log.levels.INFO)
+
+  git_async(args, root, function(result)
+    local output = result_output(result)
+
+    if result.code == 0 then
+      local clean = trim(output)
+
+      vim.notify(clean ~= "" and clean or title .. " finished", vim.log.levels.INFO)
+      return
+    end
+
+    if #args == 1 and push_has_no_upstream(result) then
+      local upstream_args = { "push", "-u", "origin", "HEAD" }
+      local upstream_title = output_title(upstream_args)
+
+      vim.notify("No upstream branch. Setting upstream to origin", vim.log.levels.INFO)
+      vim.notify(upstream_title .. " started", vim.log.levels.INFO)
+
+      git_async(upstream_args, root, function(upstream_result)
+        local upstream_output = result_output(upstream_result)
+
+        if upstream_result.code == 0 then
+          local clean = trim(upstream_output)
+
+          vim.notify(clean ~= "" and clean or upstream_title .. " finished", vim.log.levels.INFO)
+        else
+          open_output(upstream_title .. " failed", upstream_output, { filetype = "git", root = root })
+        end
+      end)
+
+      return
+    end
+
+    open_output(title .. " failed", output, { filetype = "git", root = root })
+  end)
 end
 
 local function add_commented(out, title, text)
@@ -401,6 +484,12 @@ local function has_staged_changes(root)
   return git_sync({ "diff", "--cached", "--quiet" }, root).code ~= 0
 end
 
+local function has_status_changes(root)
+  local result = git_sync({ "status", "--porcelain" }, root)
+
+  return result.code == 0 and trim(result.stdout) ~= ""
+end
+
 local function has_head(root)
   return git_sync({ "rev-parse", "--verify", "--quiet", "HEAD" }, root).code == 0
 end
@@ -419,16 +508,6 @@ local function commit_has_content(root, args)
   end
 
   return has_staged_changes(root)
-end
-
-local function checkout_needs_confirm(args)
-  for _, arg in ipairs(args) do
-    if arg == "--" or arg:sub(1, 1) == "%" then
-      return true
-    end
-  end
-
-  return false
 end
 
 local function commit_template(root, args)
@@ -489,7 +568,7 @@ local function commit_message_from_file(file)
   return table.concat(message, "\n")
 end
 
-local function finalize_commit(bufnr)
+local function finalize_commit(bufnr, reason)
   local state = commit_states[bufnr]
 
   if not state or state.done then
@@ -509,6 +588,11 @@ local function finalize_commit(bufnr)
   if not state.written or modified then
     vim.fn.delete(state.dir, "rf")
     vim.notify("Git commit aborted", vim.log.levels.INFO)
+
+    if state.return_to_status then
+      open_status_panel(state.root)
+    end
+
     return
   end
 
@@ -517,6 +601,11 @@ local function finalize_commit(bufnr)
   if not message or trim(message) == "" then
     vim.fn.delete(state.dir, "rf")
     vim.notify("Git commit aborted: empty message", vim.log.levels.WARN)
+
+    if state.return_to_status then
+      open_status_panel(state.root)
+    end
+
     return
   end
 
@@ -539,6 +628,10 @@ local function finalize_commit(bufnr)
     else
       vim.notify(clean, vim.log.levels.INFO)
     end
+
+    if state.return_to_status and reason == "buffer" then
+      open_status_panel(state.root)
+    end
   else
     local failure = output
 
@@ -551,7 +644,8 @@ local function finalize_commit(bufnr)
   end
 end
 
-local function open_commit(args)
+local function open_commit(args, opts)
+  opts = opts or {}
   args = expand_args(args)
 
   if not args then
@@ -598,6 +692,7 @@ local function open_commit(args)
     edit_file = edit_file,
     message_file = message_file,
     root = root,
+    return_to_status = opts.return_to_status,
     written = false,
     done = false,
   }
@@ -620,7 +715,7 @@ local function open_commit(args)
     group = group,
     callback = function()
       if vim.api.nvim_get_current_buf() == bufnr then
-        finalize_commit(bufnr)
+        finalize_commit(bufnr, "window")
       end
     end,
   })
@@ -629,12 +724,12 @@ local function open_commit(args)
     group = group,
     buffer = bufnr,
     callback = function()
-      finalize_commit(bufnr)
+      finalize_commit(bufnr, "buffer")
     end,
   })
 end
 
-local function status_args(args)
+status_args = function(args)
   if #args == 1 then
     return { "status", "--short", "--branch" }
   end
@@ -644,7 +739,7 @@ end
 
 local function log_args(args)
   if #args == 1 then
-    return { "log", "--oneline", "--decorate", "--graph", "--all" }
+    return { "log", "--oneline", "--decorate", "--graph", "--all", "-n", "300" }
   end
 
   return args
@@ -735,48 +830,31 @@ local function setup_commit_details_buffer(buf)
       return
     end
 
-    local result = git_sync({ "cat-file", "-p", hash }, root)
     local file = diff_file_under_cursor()
     local title = "git cat-file -p " .. hash
 
-    if result.code ~= 0 then
-      open_output(title .. " failed", result_output(result), { filetype = "git", root = root, previous_buf = buf })
-      return
-    end
+    git_async({ "cat-file", "-p", hash }, root, function(result)
+      if result.code ~= 0 then
+        open_output(title .. " failed", result_output(result), { filetype = "git", root = root, previous_buf = buf })
+        return
+      end
 
-    open_output(title, result.stdout, { filetype = filetype_for_blob(file), root = root, previous_buf = buf })
+      open_output(title, result.stdout, { filetype = filetype_for_blob(file), root = root, previous_buf = buf })
+    end)
   end, { buffer = buf, desc = "Git show blob", nowait = true })
 end
 
 local function open_commit_details(root, commit, previous_buf)
-  local meta = git_sync({ "show", "--no-patch", "--format=fuller", commit }, root)
-  local stat = git_sync({ "show", "--stat", "--format=", commit }, root)
-  local diff = git_sync({ "show", "--format=", "--patch", commit }, root)
   local title = "git show " .. commit
 
-  if meta.code ~= 0 then
-    open_output(title .. " failed", result_output(meta), { filetype = "git", root = root, previous_buf = previous_buf })
-    return
-  end
+  git_async({ "show", "--stat", "--patch", "--format=fuller", commit }, root, function(result)
+    if result.code ~= 0 then
+      open_output(title .. " failed", result_output(result), { filetype = "git", root = root, previous_buf = previous_buf })
+      return
+    end
 
-  if stat.code ~= 0 then
-    open_output(title .. " failed", result_output(stat), { filetype = "git", root = root, previous_buf = previous_buf })
-    return
-  end
-
-  if diff.code ~= 0 then
-    open_output(title .. " failed", result_output(diff), { filetype = "git", root = root, previous_buf = previous_buf })
-    return
-  end
-
-  local content = table.concat({
-    trim(meta.stdout),
-    "---",
-    trim(stat.stdout) ~= "" and stat.stdout or "(none)",
-    trim(diff.stdout) ~= "" and diff.stdout or "(none)",
-  }, "\n")
-
-  open_output(title, content, { filetype = "git", root = root, previous_buf = previous_buf, on_open = setup_commit_details_buffer })
+    open_output(title, result.stdout, { filetype = "git", root = root, previous_buf = previous_buf, on_open = setup_commit_details_buffer })
+  end)
 end
 
 local function setup_log_buffer(buf)
@@ -816,6 +894,151 @@ local function setup_log_buffer(buf)
   vim.keymap.set("n", "o", open_commit_under_cursor, { buffer = buf, desc = "Git show commit", nowait = true })
   vim.keymap.set("n", "<CR>", open_commit_under_cursor, { buffer = buf, desc = "Git show commit" })
   vim.keymap.set("n", "y", copy_commit_under_cursor, { buffer = buf, desc = "Copy commit hash", nowait = true })
+end
+
+local function branch_info_from_line(line)
+  line = line:gsub("^%*%s*", ""):gsub("^%s+", ""):gsub("%s+$", "")
+
+  if line == "" or line:match("^%(") or line:find(" -> ", 1, true) then
+    return nil
+  end
+
+  local remote = line:match("^remotes/([^/]+)/(.+)$")
+
+  if remote then
+    local branch = line:match("^remotes/[^/]+/(.+)$")
+
+    if branch == "HEAD" or branch:match("^HEAD%s") then
+      return nil
+    end
+
+    return {
+      branch = branch,
+      remote = remote,
+      remote_branch = line:gsub("^remotes/", ""),
+      type = "remote",
+    }
+  end
+
+  return {
+    branch = line,
+    type = "local",
+  }
+end
+
+setup_branch_buffer = function(buf)
+  local function info_under_cursor()
+    local info = branch_info_from_line(vim.api.nvim_get_current_line())
+
+    if not info then
+      vim.notify("No branch found on current line", vim.log.levels.WARN)
+      return
+    end
+
+    return info
+  end
+
+  local function root_for_branch()
+    local root = output_root(buf)
+
+    if not root then
+      return
+    end
+
+    return root
+  end
+
+  local function refresh_branch(root)
+    run_git({ "branch", "-a" }, { output = true, filetype = "git", root = root, panel = "branch", on_open = setup_branch_buffer })
+  end
+
+  local function run_branch_action(root, args, opts)
+    opts = opts or {}
+    local title = output_title(args)
+
+    git_async(args, root, function(result)
+      local output = result_output(result)
+
+      if result.code == 0 then
+        local clean = trim(output)
+
+        vim.notify(clean ~= "" and clean or title .. " finished", vim.log.levels.INFO)
+        if opts.on_success then
+          opts.on_success()
+          return
+        end
+
+        refresh_branch(root)
+      else
+        open_output(title .. " failed", output, { filetype = "git", root = root, previous_buf = buf })
+      end
+    end)
+  end
+
+  vim.keymap.set("n", "c", function()
+    local info = info_under_cursor()
+    local root = root_for_branch()
+
+    if not info or not root then
+      return
+    end
+
+    if info.type == "remote" then
+      run_branch_action(root, { "checkout", "-b", info.branch, "--track", info.remote_branch })
+      return
+    end
+
+    run_branch_action(root, { "checkout", info.branch })
+  end, { buffer = buf, desc = "Git checkout branch", nowait = true })
+
+  vim.keymap.set("n", "n", function()
+    local info = info_under_cursor()
+    local root = root_for_branch()
+
+    if not info or not root then
+      return
+    end
+
+    local branch = trim(vim.fn.input("New branch name: "))
+
+    if branch == "" then
+      return
+    end
+
+    local start_point = info.type == "remote" and info.remote_branch or info.branch
+
+    run_branch_action(root, { "checkout", "-b", branch, start_point })
+  end, { buffer = buf, desc = "Git create and checkout branch", nowait = true })
+
+  vim.keymap.set("n", "d", function()
+    local info = info_under_cursor()
+    local root = root_for_branch()
+
+    if not info or not root then
+      return
+    end
+
+    if info.type == "remote" then
+      local message = "Delete remote branch " .. info.remote_branch .. "?"
+
+      if vim.fn.confirm(message, "&No\n&Yes", 1) ~= 2 then
+        return
+      end
+
+      run_branch_action(root, { "push", info.remote, "--delete", info.branch }, {
+        on_success = function()
+          run_branch_action(root, { "fetch", "-p" })
+        end,
+      })
+      return
+    end
+
+    if vim.fn.confirm("Delete local branch " .. info.branch .. "?", "&No\n&Yes", 1) ~= 2 then
+      return
+    end
+
+    run_branch_action(root, { "branch", "-d", info.branch })
+  end, { buffer = buf, desc = "Git delete branch", nowait = true })
 end
 
 local function status_info_from_line(line)
@@ -858,14 +1081,10 @@ local function filetype_for_path(path)
   return nil
 end
 
-local function blob_lines(root, file)
-  local result = git_sync({ "show", "HEAD:" .. file }, root)
-
-  if result.code ~= 0 then
-    return { "" }
-  end
-
-  return lines(result.stdout)
+local function blob_lines_async(root, file, callback)
+  git_async({ "show", "HEAD:" .. file }, root, function(result)
+    callback(result.code == 0 and lines(result.stdout) or { "" })
+  end)
 end
 
 local function worktree_lines(file)
@@ -926,45 +1145,57 @@ local function open_status_diff(root, info)
   local filetype = filetype_for_path(info.file)
   local status_buf = vim.api.nvim_get_current_buf()
   local status_win = vim.api.nvim_get_current_win()
-  local left_buf = vim.api.nvim_create_buf(false, true)
-  local left_name = ("git://HEAD/%s"):format(info.old_file)
   local right_file = vim.fs.joinpath(root, info.file)
-  local right_buf
-  local right_win
 
-  setup_diff_buffer(left_buf, left_name, blob_lines(root, info.old_file), filetype)
+  blob_lines_async(root, info.old_file, function(left_content)
+    if not vim.api.nvim_win_is_valid(status_win) or not vim.api.nvim_buf_is_valid(status_buf) then
+      return
+    end
 
-  vim.keymap.set("n", "q", function()
-    close_status_diff(left_buf, right_win, right_buf, status_buf, status_win)
-  end, { buffer = left_buf, desc = "Close Git diff", nowait = true })
+    if vim.api.nvim_win_get_buf(status_win) ~= status_buf then
+      return
+    end
 
-  if status_win == output_win then
-    output_win = -1
-  end
+    local left_buf = vim.api.nvim_create_buf(false, true)
+    local left_name = ("git://HEAD/%s"):format(info.old_file)
+    local right_buf
+    local right_win
 
-  vim.api.nvim_win_set_buf(status_win, left_buf)
-  apply_output_panel_opts(status_win)
-  vim.cmd.diffthis()
+    setup_diff_buffer(left_buf, left_name, left_content, filetype)
 
-  vim.cmd("rightbelow vertical split")
-  right_win = vim.api.nvim_get_current_win()
+    vim.keymap.set("n", "q", function()
+      close_status_diff(left_buf, right_win, right_buf, status_buf, status_win)
+    end, { buffer = left_buf, desc = "Close Git diff", nowait = true })
 
-  if vim.fn.filereadable(right_file) == 1 then
-    vim.cmd.edit(vim.fn.fnameescape(right_file))
-    right_buf = vim.api.nvim_get_current_buf()
-  else
-    right_buf = vim.api.nvim_create_buf(false, true)
-    local right_name = ("git://WORKTREE/%s"):format(info.file)
+    if status_win == output_win then
+      output_win = -1
+    end
 
-    setup_diff_buffer(right_buf, right_name, worktree_lines(right_file), filetype)
-    vim.b[right_buf].core_git_status_diff_temp = true
-    vim.api.nvim_win_set_buf(0, right_buf)
-  end
+    vim.api.nvim_set_current_win(status_win)
+    vim.api.nvim_win_set_buf(status_win, left_buf)
+    apply_output_panel_opts(status_win)
+    vim.cmd.diffthis()
 
-  vim.cmd.diffthis()
+    vim.cmd("rightbelow vertical split")
+    right_win = vim.api.nvim_get_current_win()
+
+    if vim.fn.filereadable(right_file) == 1 then
+      vim.cmd.edit(vim.fn.fnameescape(right_file))
+      right_buf = vim.api.nvim_get_current_buf()
+    else
+      right_buf = vim.api.nvim_create_buf(false, true)
+      local right_name = ("git://WORKTREE/%s"):format(info.file)
+
+      setup_diff_buffer(right_buf, right_name, worktree_lines(right_file), filetype)
+      vim.b[right_buf].core_git_status_diff_temp = true
+      vim.api.nvim_win_set_buf(0, right_buf)
+    end
+
+    vim.cmd.diffthis()
+  end)
 end
 
-local function setup_status_buffer(buf)
+setup_status_buffer = function(buf)
   local function info_under_cursor()
     local info = status_info_from_line(vim.api.nvim_get_current_line())
 
@@ -1000,6 +1231,7 @@ local function setup_status_buffer(buf)
     run_git(status_args({ "status" }), {
       output = true,
       filetype = "git",
+      panel = "status",
       root = root,
       on_open = function(status_buf)
         setup_status_buffer(status_buf)
@@ -1115,30 +1347,27 @@ local function setup_status_buffer(buf)
     run_status_action(root, { "restore", "--staged", "--", "." })
   end, { buffer = buf, desc = "Git unstage all files", nowait = true })
 
-  vim.keymap.set("n", "r", function()
-    local info = info_under_cursor()
+  vim.keymap.set("n", "S", function()
     local root = root_for_status()
 
-    if not info or not root then
+    if not root then
       return
     end
 
-    if info.untracked then
-      vim.notify("Cannot restore untracked file: " .. info.file, vim.log.levels.WARN)
+    if not has_status_changes(root) then
+      vim.notify("No changes to stash", vim.log.levels.WARN)
       return
     end
 
-    if vim.fn.confirm("Discard changes to " .. info.file .. "?", "&No\n&Yes", 1) ~= 2 then
+    local message = trim(vim.fn.input("Stash message: "))
+
+    if message == "" then
+      vim.notify("Git stash aborted: empty message", vim.log.levels.INFO)
       return
     end
 
-    if info.index == "A" and info.worktree == " " then
-      unstage_file(root, info)
-      return
-    end
-
-    run_status_action(root, { "restore", "--staged", "--worktree", "--", info.file }, info)
-  end, { buffer = buf, desc = "Git restore file", nowait = true })
+    run_status_action(root, { "stash", "push", "--include-untracked", "-m", message })
+  end, { buffer = buf, desc = "Git stash changes", nowait = true })
 
   vim.keymap.set("n", "x", function()
     local info = info_under_cursor()
@@ -1164,6 +1393,40 @@ local function setup_status_buffer(buf)
 
     run_status_action(root, { "restore", "--staged", "--worktree", "--", info.file }, info)
   end, { buffer = buf, desc = "Git discard file", nowait = true })
+
+  vim.keymap.set("n", "X", function()
+    local root = root_for_status()
+
+    if not root then
+      return
+    end
+
+    if not has_status_changes(root) then
+      vim.notify("No changes to discard", vim.log.levels.WARN)
+      return
+    end
+
+    if vim.fn.confirm("Discard all changes?", "&No\n&Yes", 1) ~= 2 then
+      return
+    end
+
+    git_async({ "restore", "--staged", "--worktree", "--", "." }, root, function(restore_result)
+      if restore_result.code ~= 0 then
+        open_output("git restore failed", result_output(restore_result), { filetype = "git", root = root })
+        return
+      end
+
+      git_async({ "clean", "-f", "--", "." }, root, function(clean_result)
+        if clean_result.code ~= 0 then
+          open_output("git clean failed", result_output(clean_result), { filetype = "git", root = root })
+          return
+        end
+
+        vim.notify("Discarded all changes", vim.log.levels.INFO)
+        refresh_status(root)
+      end)
+    end)
+  end, { buffer = buf, desc = "Git discard all files", nowait = true })
 
   vim.keymap.set("n", "d", function()
     local info = info_under_cursor()
@@ -1193,7 +1456,7 @@ local function setup_status_buffer(buf)
       return
     end
 
-    open_commit({})
+    open_commit({}, { return_to_status = true })
   end, { buffer = buf, desc = "Git commit staged changes", nowait = true })
 end
 
@@ -1212,29 +1475,8 @@ function M.run(args, opts)
     return
   end
 
-  if cmd == "rebase" then
-    open_git_terminal(args)
-    return
-  end
-
-  if cmd == "restore" and not opts.bang then
-    local message = "Run git " .. table.concat(args, " ") .. "?"
-
-    if vim.fn.confirm(message, "&No\n&Yes", 1) ~= 2 then
-      return
-    end
-  end
-
-  if cmd == "checkout" and checkout_needs_confirm(args) and not opts.bang then
-    local message = "Run git " .. table.concat(args, " ") .. "?"
-
-    if vim.fn.confirm(message, "&No\n&Yes", 1) ~= 2 then
-      return
-    end
-  end
-
   if cmd == "status" then
-    run_git(status_args(args), { output = true, filetype = "git", on_open = setup_status_buffer })
+    run_git(status_args(args), { output = true, filetype = "git", panel = "status", on_open = setup_status_buffer })
     return
   end
 
@@ -1243,8 +1485,13 @@ function M.run(args, opts)
     return
   end
 
-  if cmd == "stash" and #args == 1 then
-    run_git({ "stash", "list" }, { output = true, filetype = "git" })
+  if cmd == "branch" then
+    run_git(args, { output = true, filetype = "git", panel = "branch", on_open = setup_branch_buffer })
+    return
+  end
+
+  if cmd == "push" then
+    run_push(args)
     return
   end
 
@@ -1254,7 +1501,11 @@ function M.run(args, opts)
   end
 
   if notify_commands[cmd] then
-    run_git(args, { filetype = "git" })
+    run_git(args, {
+      filetype = "git",
+      notify_start = cmd == "fetch" or cmd == "pull" or cmd == "push",
+      refresh_after = (cmd == "fetch" or cmd == "pull") and cmd or nil,
+    })
     return
   end
 
@@ -1290,9 +1541,6 @@ function M.setup()
 
   vim.keymap.set("n", "<C-g>b", "<cmd>Git branch -a<CR>", { desc = "Git branch" })
   vim.keymap.set("n", "<C-g>s", "<cmd>Git status<CR>", { desc = "Git status" })
-  vim.keymap.set("n", "<C-g>S", ":Git stash ", { desc = "Git stash" })
-  vim.keymap.set("n", "<C-g>c", ":Git checkout ", { desc = "Git checkout" })
-  vim.keymap.set("n", "<C-g>r", ":Git rebase ", { desc = "Git rebase" })
   vim.keymap.set("n", "<C-g>f", "<cmd>Git fetch -atp<CR>", { desc = "Git fetch" })
   vim.keymap.set("n", "<C-g>l", "<cmd>Git log<CR>", { desc = "Git log" })
   vim.keymap.set("n", "<C-g>p", "<cmd>Git pull<CR>", { desc = "Git pull" })
