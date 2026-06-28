@@ -11,7 +11,7 @@ vim.diagnostic.config({
     border = "rounded",
     source = "if_many",
     header = "",
-    prefix = "",
+    -- prefix = "",
   },
 
   signs = {

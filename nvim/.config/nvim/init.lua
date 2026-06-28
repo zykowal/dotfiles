@@ -17,11 +17,15 @@ vim.pack.add({
 	{ src = gh("christoomey/vim-tmux-navigator") },
 	{ src = gh("kylechui/nvim-surround") },
 	{ src = gh("nvim-mini/mini.ai") },
+	{ src = gh("windwp/nvim-autopairs") },
+  { src = gh("saghen/blink.cmp"), version = vim.version.range("^1") },
 }, { confirm = false })
 
 require("core")
 require("plugins")
 require("lsp")
+
+require("nvim-autopairs").setup {}
 
 -- Enable UI2
 require('vim._core.ui2').enable()

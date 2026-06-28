@@ -1,9 +1,9 @@
 local opt = vim.opt
 
+vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)                                                       -- connection to the system clipboard
 opt.tabclose = "uselast"                                                                                           -- go to last used tab when closing the current tab
 opt.backspace = vim.list_extend(vim.opt.backspace:get(), { "nostop" })                                             -- don't stop backspace at insert
 opt.breakindent = true                                                                                             -- wrap indent to match  line start
-opt.clipboard = "unnamedplus"                                                                                      -- connection to the system clipboard
 opt.cmdheight = 0                                                                                                  -- hide command line unless needed
 opt.confirm = true                                                                                                 -- raise a dialog asking if you wish to save the current file(s)
 opt.copyindent = true                                                                                              -- copy the previous indentation on autoindenting
@@ -60,9 +60,3 @@ opt.foldmethod = "indent"                                                       
 opt.winborder = "rounded"                                                                                          -- Set winborder to rounded
 opt.guicursor = "n-v-c-i:block"                                                                                    -- Set guicursor to block
 opt.termguicolors = true                                                                                           -- Set termguicolors to true
-opt.completeopt = { "fuzzy", "nosort", "menu", "menuone", "noselect" }                                             -- Options for insert mode completion
-opt.autocomplete = true                                                                                            -- Enable completion
-opt.complete = { "o,." }                                                                                           -- Use omni completion
-opt.wildmenu = true                                                                                                -- Enable wild menu
-opt.wildoptions = 'pum,fuzzy'                                                                                      -- Enable wild options
-opt.wildmode = "noselect:lastused,full"                                                                            -- Enable wild mode

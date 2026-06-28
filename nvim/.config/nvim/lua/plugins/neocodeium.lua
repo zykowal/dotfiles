@@ -5,7 +5,6 @@ vim.pack.add({
 require("neocodeium").setup()
 
 vim.keymap.set({ 'i', 'c' }, '<C-l>', function()
-  if vim.fn.pumvisible() ~= 0 then return "<C-y>" end
   return require("neocodeium").accept()
 end, { expr = true })
 vim.keymap.set('i', '<Tab>',function()
