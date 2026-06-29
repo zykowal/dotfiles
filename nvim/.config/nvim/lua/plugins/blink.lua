@@ -1,113 +1,82 @@
-require("blink.cmp").setup({
-  keymap = {
-    ["<C-Space>"] = { "show", "show_documentation", "hide_documentation" },
-    ["<Up>"] = { "select_prev", "fallback" },
-    ["<Down>"] = { "select_next", "fallback" },
-    ["<C-N>"] = { "select_next", "show" },
-    ["<C-P>"] = { "select_prev", "show" },
-    ["<C-J>"] = { "select_next", "fallback" },
-    ["<C-K>"] = { "select_prev", "fallback" },
-    ["<C-U>"] = { function(cmp) return cmp.select_prev({ count = 5 }) end, "fallback" },
-    ["<C-D>"] = { function(cmp) return cmp.select_next({ count = 5 }) end, "fallback" },
-    ["<C-B>"] = { "scroll_documentation_up", "fallback" },
-    ["<C-F>"] = { "scroll_documentation_down", "fallback" },
-    ["<C-E>"] = { "hide", "fallback" },
-    ["<CR>"] = { "accept", "fallback" },
-    ["<C-l>"] = { "accept", "fallback" },
-  },
-
-  cmdline = {
+return {
+  "saghen/blink.cmp",
+  event = { "InsertEnter", "CmdlineEnter" },
+  opts_extend = { "sources.default", "cmdline.sources", "term.sources" },
+  version = "^1",
+  opts = {
     keymap = {
-      ["<Tab>"] = { "show", "accept" },
-      ["<S-Tab>"] = { "show_and_insert", "select_prev" },
-
+      ["<C-Space>"] = { "show", "show_documentation", "hide_documentation" },
+      ["<Up>"] = { "select_prev", "fallback" },
+      ["<Down>"] = { "select_next", "fallback" },
       ["<C-N>"] = { "select_next", "show" },
       ["<C-P>"] = { "select_prev", "show" },
       ["<C-J>"] = { "select_next", "fallback" },
       ["<C-K>"] = { "select_prev", "fallback" },
-      ["<C-L>"] = { "accept", "fallback" },
-
-      ["<C-Y>"] = { "select_and_accept" },
-      ["<C-E>"] = { "cancel" },
+      ["<C-U>"] = { function(cmp) return cmp.select_prev({ count = 5 }) end, "fallback" },
+      ["<C-D>"] = { function(cmp) return cmp.select_next({ count = 5 }) end, "fallback" },
+      ["<C-B>"] = { "scroll_documentation_up", "fallback" },
+      ["<C-F>"] = { "scroll_documentation_down", "fallback" },
+      ["<C-E>"] = { "hide", "fallback" },
+      ["<CR>"] = { "accept", "fallback" },
+      ["<C-l>"] = { "accept", "fallback" },
     },
-    completion = { menu = { auto_show = true }, ghost_text = { enabled = false } },
-  },
 
-  appearance = {
-    nerd_font_variant = "normal",
-    kind_icons = {
-      Array = "",
-      Boolean = "󰨙",
-      Class = "󰯳",
-      Color = "󰰠",
-      Control = "",
-      Collapsed = ">",
-      Constant = "󰯱",
-      Constructor = "",
-      Enum = "󰯹",
-      EnumMember = "",
-      Event = "",
-      Field = "",
-      File = "",
-      Folder = "",
-      Function = "󰡱",
-      Interface = "󰰅",
-      Key = "",
-      Keyword = "󱕴",
-      Method = "󰰑",
-      Module = "󰆼",
-      Namespace = "󰰔",
-      Null = "",
-      Number = "",
-      Object = "󰲟",
-      Operator = "",
-      Package = "󰰚",
-      Property = "󰲽",
-      Reference = "󰰠",
-      Snippet = "",
-      String = "",
-      Struct = "󰰣",
-      Text = "󱜥",
-      TypeParameter = "󰰦",
-      Unit = "󱜥",
-      Value = "",
-      Variable = "󰫧",
-    }
-  },
+    cmdline = {
+      keymap = {
+        ["<Tab>"] = { "show", "accept" },
+        ["<S-Tab>"] = { "show_and_insert", "select_prev" },
 
-  completion = {
-    accept = {
-      auto_brackets = { enabled = true },
-    },
-    list = { selection = { preselect = false, auto_insert = true } },
-    menu = {
-      border = "none",
-      scrollbar = false,
-      draw = {
-        treesitter = { "lsp" },
-        columns = { { "label", "label_description", gap = 1 }, { "kind_icon", "kind" } },
+        ["<C-N>"] = { "select_next", "show" },
+        ["<C-P>"] = { "select_prev", "show" },
+        ["<C-J>"] = { "select_next", "fallback" },
+        ["<C-K>"] = { "select_prev", "fallback" },
+        ["<C-L>"] = { "accept", "fallback" },
+
+        ["<C-Y>"] = { "select_and_accept" },
+        ["<C-E>"] = { "cancel" },
       },
+      completion = { menu = { auto_show = true }, ghost_text = { enabled = false } },
     },
-    documentation = {
-      auto_show = true,
-      auto_show_delay_ms = 50,
-      window = {
-        border = "rounded",
+
+    appearance = {
+      nerd_font_variant = "normal",
+    },
+
+    -- (Default) Only show the documentation popup when manually triggered
+    completion = {
+      accept = {
+        auto_brackets = { enabled = true },
+      },
+      list = { selection = { preselect = false, auto_insert = true } },
+      menu = {
+        border = "none",
         scrollbar = false,
+        draw = {
+          treesitter = { "lsp" },
+          columns = { { "label", "label_description", gap = 1 }, { "kind_icon", "kind" } },
+        },
+      },
+      documentation = {
+        auto_show = true,
+        auto_show_delay_ms = 0,
+        window = {
+          border = "rounded",
+          scrollbar = false,
+        },
       },
     },
-  },
-  signature = {
-    enabled = true,
-    window = {
-      border = "none",
-      show_documentation = false,
+    signature = {
+      enabled = true,
+      window = {
+        border = "none",
+        show_documentation = true,
+      },
     },
-  },
 
-  sources = {
-    default = { "lsp", "buffer", "path", "snippets" },
-  },
+    sources = {
+      default = { "lsp", "buffer", "path", "snippets" },
+    },
 
-  fuzzy = { implementation = "prefer_rust" },
-})
+    fuzzy = { implementation = "prefer_rust" },
+  },
+}

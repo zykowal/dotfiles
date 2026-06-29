@@ -1,375 +1,206 @@
-local map = vim.keymap.set
-local fzf = require("fzf-lua")
+local function fzf_call(method, opts)
+  return function()
+    require("fzf-lua")[method](opts)
+  end
+end
 
-fzf.setup({
-  {
-    "fzf-native",
-    "border-fused",
-    "hide",
-  },
-  lsp = {
-    symbols = {
-      symbol_icons = {
-        Array = "",
-        Boolean = "󰨙",
-        Class = "󰯳",
-        Color = "󰰠",
-        Control = "",
-        Collapsed = ">",
-        Constant = "󰯱",
-        Constructor = "",
-        Enum = "󰯹",
-        EnumMember = "",
-        Event = "",
-        Field = "",
-        File = "",
-        Folder = "",
-        Function = "󰡱",
-        Interface = "󰰅",
-        Key = "",
-        Keyword = "󱕴",
-        Method = "󰰑",
-        Module = "󰆼",
-        Namespace = "󰰔",
-        Null = "",
-        Number = "",
-        Object = "󰲟",
-        Operator = "",
-        Package = "󰰚",
-        Property = "󰲽",
-        Reference = "󰰠",
-        Snippet = "",
-        String = "",
-        Struct = "󰰣",
-        Text = "󱜥",
-        TypeParameter = "󰰦",
-        Unit = "󱜥",
-        Value = "",
-        Variable = "󰫧",
-      }
-    },
-  },
-  winopts = {
-    fullscreen = true,
-    height = 1,
-    width = 1,
-    row = 1,
-    col = 0,
-    border = "border-top",
-    title_pos = "left",
-    treesitter = false,
-    preview = {
-      hidden = true,
-      scrollbar = false,
-      layout = "horizontal",
-      horizontal = "up:62%",
-      flip_columns = 120,
-    },
-  },
-  defaults = {
-    git_icons = false,
-    file_icons = false,
-  },
-  oldfiles = {
-    cwd_only = true,
-  },
-  git = {
-    hunks = {
-      fzf_opts = {
-        ["--layout"] = "reverse-list",
-        ["--multi"] = true,
-        ["--delimiter"] = ":",
-        ["--nth"] = "3..",
-      },
-    },
-  },
-  fzf_opts = {
-    ["--layout"] = "default",
-    ["--cycle"] = true,
-  },
-  keymap = {
-    builtin = {
-      true,
-      ["<C-n>"] = "preview-page-down",
-      ["<C-p>"] = "preview-page-up",
-      ["<C-l>"] = "toggle-preview",
-    },
-    fzf = {
-      true,
-      ["ctrl-n"] = "preview-page-down",
-      ["ctrl-p"] = "preview-page-up",
-      ["ctrl-d"] = "half-page-down",
-      ["ctrl-u"] = "half-page-up",
-      ["ctrl-l"] = "toggle-preview",
-      ["ctrl-q"] = "select-all+accept",
-    },
-  },
-  fzf_colors = {
-    true,
-    bg = "-1",
-    gutter = "-1",
-  },
-})
+local function workspace_symbols_or_grep()
+  local fzf = require("fzf-lua")
 
-fzf.register_ui_select()
-
-map("n", "<C-e>", function()
   if #vim.lsp.get_clients({ bufnr = 0, method = "workspace/symbol" }) > 0 then
     fzf.lsp_live_workspace_symbols()
     return
   end
 
   fzf.live_grep_native()
-end, { desc = "Workspace symbols or grep" })
+end
 
-map("n", "<C-f>", function()
-  fzf.files()
-end, { desc = "Find files" })
+local function references_or_cword()
+  local fzf = require("fzf-lua")
 
-map("n", "<leader>/", function()
-  fzf.grep_curbuf()
-end, { desc = "Find in current buffer" })
-
-map("n", "<leader>.", function()
-  fzf.buffers()
-end, { desc = "Buffers" })
-
-map("n", "gd", function()
-  fzf.lsp_definitions({ jump1 = true })
-end, { desc = "Definitions" })
-
-map("n", "gI", function()
-  fzf.lsp_implementations()
-end, { desc = "Implementations" })
-
-map("n", "gy", function()
-  fzf.lsp_typedefs()
-end, { desc = "Type definitions" })
-
-map("n", "gp", function()
-  fzf.lsp_finder()
-end, { desc = "LSP finder" })
-
-map("n", "gh", function()
-  fzf.lsp_type_sub()
-end, { desc = "Show subtypes" })
-
-map("n", "gH", function()
-  fzf.lsp_type_super()
-end, { desc = "Show supertypes" })
-
-map("n", "gr", function()
   if #vim.lsp.get_clients({ bufnr = 0, method = "textDocument/references" }) > 0 then
     fzf.lsp_references()
     return
   end
+
   fzf.grep_cword()
-end, { desc = "Search references" })
+end
 
-map("n", "gD", function()
-  fzf.lsp_declarations()
-end, { desc = "Search declarations" })
-
-map("n", "<leader>gb", function()
-  fzf.git_branches()
-end, { desc = "Git branches" })
-
-map("n", "<leader>gc", function()
-  fzf.git_commits()
-end, { desc = "Git commits (repository)" })
-
-map("n", "<leader>gC", function()
-  fzf.git_bcommits()
-end, { desc = "Git commits (current file)" })
-
-map("n", "<leader>gD", function()
-  fzf.git_diff()
-end, { desc = "Git diff" })
-
-map("n", "<leader>gh", function()
-  fzf.git_hunks()
-end, { desc = "Git hunks" })
-
-map("n", "<leader>gt", function()
-  fzf.git_status()
-end, { desc = "Git status" })
-
-map("n", "<leader>gw", function()
-  fzf.git_worktrees()
-end, { desc = "Git worktrees" })
-
-map("n", "<leader>gA", function()
-  fzf.git_stash()
-end, { desc = "Git stash" })
-
-map("n", "<leader>ga", function()
-  fzf.git_tags()
-end, { desc = "Git tags" })
-
-map("i", "<C-x><C-f>", function()
-  fzf.complete_path()
-end, { desc = "Fuzzy complete path" })
-
-map("n", "<leader>f<CR>", function()
-  fzf.resume()
-end, { desc = "Resume previous search" })
-
-map("n", "<leader>f'", function()
-  fzf.marks()
-end, { desc = "Find marks" })
-
-map("n", "<leader>fa", function()
-  fzf.files({ prompt = "Config> ", cwd = vim.fn.stdpath("config") })
-end, { desc = "Find config files" })
-
-map("n", "<leader>fb", function()
-  fzf.buffers()
-end, { desc = "Find buffers" })
-
-map("n", "<leader>fc", function()
-  fzf.grep_cword()
-end, { desc = "Find word under cursor" })
-
-map("n", "<leader>fC", function()
-  fzf.commands()
-end, { desc = "Find commands" })
-
-map("n", "<leader>ff", function()
-  fzf.files()
-end, { desc = "Find files" })
-
-map("n", "<leader>fh", function()
-  fzf.helptags()
-end, { desc = "Find help" })
-
-map("n", "<leader>fk", function()
-  fzf.keymaps({
+return {
+  "ibhagwan/fzf-lua",
+  cmd = "FzfLua",
+  keys = {
+    { "<C-e>", workspace_symbols_or_grep, desc = "Workspace symbols or grep" },
+    { "<C-f>", fzf_call("files"), desc = "Find files" },
+    { "<leader>/", fzf_call("grep_curbuf"), desc = "Find in current buffer" },
+    { "<leader>.", fzf_call("buffers"), desc = "Buffers" },
+    { "gd", fzf_call("lsp_definitions", { jump1 = true }), desc = "Definitions" },
+    { "gI", fzf_call("lsp_implementations"), desc = "Implementations" },
+    { "gy", fzf_call("lsp_typedefs"), desc = "Type definitions" },
+    { "gp", fzf_call("lsp_finder"), desc = "LSP finder" },
+    { "gh", fzf_call("lsp_type_sub"), desc = "Show subtypes" },
+    { "gH", fzf_call("lsp_type_super"), desc = "Show supertypes" },
+    { "gr", references_or_cword, desc = "Search references" },
+    { "gD", fzf_call("lsp_declarations"), desc = "Search declarations" },
+    { "<leader>gb", fzf_call("git_branches"), desc = "Git branches" },
+    { "<leader>gc", fzf_call("git_commits"), desc = "Git commits (repository)" },
+    { "<leader>gC", fzf_call("git_bcommits"), desc = "Git commits (current file)" },
+    { "<leader>gD", fzf_call("git_diff"), desc = "Git diff" },
+    { "<leader>gh", fzf_call("git_hunks"), desc = "Git hunks" },
+    { "<leader>gt", fzf_call("git_status"), desc = "Git status" },
+    { "<leader>gw", fzf_call("git_worktrees"), desc = "Git worktrees" },
+    { "<leader>gA", fzf_call("git_stash"), desc = "Git stash" },
+    { "<leader>ga", fzf_call("git_tags"), desc = "Git tags" },
+    { "<C-x><C-f>", fzf_call("complete_path"), mode = "i", desc = "Fuzzy complete path" },
+    { "<leader>f<CR>", fzf_call("resume"), desc = "Resume previous search" },
+    { "<leader>f'", fzf_call("marks"), desc = "Find marks" },
+    {
+      "<leader>fa",
+      function()
+        require("fzf-lua").files({ prompt = "Config> ", cwd = vim.fn.stdpath("config") })
+      end,
+      desc = "Find config files",
+    },
+    { "<leader>fb", fzf_call("buffers"), desc = "Find buffers" },
+    { "<leader>fc", fzf_call("grep_cword"), desc = "Find word under cursor" },
+    { "<leader>fC", fzf_call("commands"), desc = "Find commands" },
+    { "<leader>ff", fzf_call("files"), desc = "Find files" },
+    { "<leader>fh", fzf_call("helptags"), desc = "Find help" },
+    {
+      "<leader>fk",
+      function()
+        require("fzf-lua").keymaps({
+          winopts = {
+            preview = {
+              layout = "horizontal",
+              horizontal = "right:62%",
+            },
+          },
+        })
+      end,
+      desc = "Find keymaps",
+    },
+    { "<leader>fm", fzf_call("marks"), desc = "Find marks" },
+    { "<leader>fM", fzf_call("manpages"), desc = "Find man" },
+    { "<leader>fo", fzf_call("oldfiles"), desc = "Find history" },
+    { "<leader>fr", fzf_call("registers"), desc = "Find registers" },
+    { '<leader>f"', fzf_call("registers"), desc = "Find registers" },
+    { "<leader>fT", fzf_call("colorschemes"), desc = "Find themes" },
+    { "<leader>fw", fzf_call("grep_project"), desc = "Find words" },
+    { "<leader>fc", fzf_call("grep_visual"), mode = "v", desc = "Find selection" },
+    { "<leader>ls", fzf_call("lsp_document_symbols"), desc = "Search symbols" },
+    { "<leader>lS", fzf_call("lsp_live_workspace_symbols"), desc = "Search workspace symbols" },
+    { "<leader>:", fzf_call("command_history"), desc = "Command history" },
+    { "<leader>,", fzf_call("live_grep_native"), desc = "Find words" },
+    { "<leader>fH", fzf_call("highlights"), desc = "Find highlights" },
+    { "<leader>fj", fzf_call("jumps"), desc = "Find jumps" },
+    { "<leader>fu", fzf_call("changes"), desc = "Find changes" },
+    { "<leader>fA", fzf_call("autocmds"), desc = "Find autocmds" },
+    { "<leader>fd", fzf_call("diagnostics_document"), desc = "Document diagnostics" },
+    { "<leader>fD", fzf_call("diagnostics_workspace"), desc = "Workspace diagnostics" },
+    { "<leader>la", fzf_call("lsp_code_actions"), desc = "Code actions" },
+    { "<leader>fq", fzf_call("quickfix"), desc = "Find quickfix" },
+    { "<leader>fQ", fzf_call("quickfix_stack"), desc = "Find quickfix stack" },
+    {
+      "<leader>ft",
+      function()
+        require("fzf-lua").grep({
+          search = [[\b(TODO|NOTE|FIX|FIXME|HACK|PERF|OPTIMIZE|BUG|XXX)\b]],
+          no_esc = true,
+          prompt = "TODO> ",
+        })
+      end,
+      desc = "Find TODO tags",
+    },
+    { "<leader>fL", fzf_call("tags_live_grep"), desc = "Find tags" },
+    { "<leader>fl", fzf_call("grep"), desc = "Grep pattern" },
+    { "<leader>fg", fzf_call("vcs_files"), desc = "Search git files" },
+    { "<leader>f/", fzf_call("search_history"), desc = "Search history" },
+    {
+      "z=",
+      function()
+        require("fzf-lua").spell_suggest({
+          winopts = {
+            border = "rounded",
+            fullscreen = false,
+          },
+        })
+      end,
+      desc = "Spell suggest",
+    },
+    { "<leader>fz", fzf_call("zoxide"), desc = "Find zoxide" },
+  },
+  opts = {
+    {
+      "fzf-native",
+      "border-fused",
+      "hide",
+    },
     winopts = {
+      fullscreen = true,
+      height = 1,
+      width = 1,
+      row = 1,
+      col = 0,
+      border = "border-top",
+      title_pos = "left",
+      treesitter = false,
       preview = {
+        hidden = true,
+        scrollbar = false,
         layout = "horizontal",
-        horizontal = "right:62%",
+        horizontal = "up:62%",
+        flip_columns = 120,
       },
     },
-  })
-end, { desc = "Find keymaps" })
-
-map("n", "<leader>fm", function()
-  fzf.marks()
-end, { desc = "Find marks" })
-
-map("n", "<leader>fM", function()
-  fzf.manpages()
-end, { desc = "Find man" })
-
-map("n", "<leader>fo", function()
-  fzf.oldfiles()
-end, { desc = "Find history" })
-
-map("n", "<leader>fr", function()
-  fzf.registers()
-end, { desc = "Find registers" })
-
-map("n", '<leader>f"', function()
-  fzf.registers()
-end, { desc = "Find registers" })
-
-map("n", "<leader>fT", function()
-  fzf.colorschemes()
-end, { desc = "Find themes" })
-
-map("n", "<leader>fw", function()
-  fzf.grep_project()
-end, { desc = "Find words" })
-
-map("v", "<leader>fc", function()
-  fzf.grep_visual()
-end, { desc = "Find selection" })
-
-map("n", "<leader>ls", function()
-  fzf.lsp_document_symbols()
-end, { desc = "Search symbols" })
-
-map("n", "<leader>lS", function()
-  fzf.lsp_live_workspace_symbols()
-end, { desc = "Search workspace symbols" })
-
-map("n", "<leader>:", function()
-  fzf.command_history()
-end, { desc = "Command history" })
-
-map("n", "<leader>,", function()
-  fzf.live_grep_native()
-end, { desc = "Find words" })
-
-map("n", "<leader>fH", function()
-  fzf.highlights()
-end, { desc = "Find highlights" })
-
-map("n", "<leader>fj", function()
-  fzf.jumps()
-end, { desc = "Find jumps" })
-
-map("n", "<leader>fu", function()
-  fzf.changes()
-end, { desc = "Find changes" })
-
-map("n", "<leader>fA", function()
-  fzf.autocmds()
-end, { desc = "Find autocmds" })
-
-map("n", "<leader>fd", function()
-  fzf.diagnostics_document()
-end, { desc = "Document diagnostics" })
-
-map("n", "<leader>fD", function()
-  fzf.diagnostics_workspace()
-end, { desc = "Workspace diagnostics" })
-
-map("n", "<leader>la", function()
-  fzf.lsp_code_actions()
-end, { desc = "Code actions" })
-
-map("n", "<leader>fq", function()
-  fzf.quickfix()
-end, { desc = "Find quickfix" })
-
-map("n", "<leader>fQ", function()
-  fzf.quickfix_stack()
-end, { desc = "Find quickfix stack" })
-
-map("n", "<leader>ft", function()
-  fzf.grep({
-    search = [[\b(TODO|FIXME|NOTE|BUG|HACK|WARN|PERF|TEST|DEBUG|REVIEW|IDEA|OPTIMIZE|XXX)\b]],
-    no_esc = true,
-    prompt = "TODO> ",
-  })
-end, { desc = "Find TODO" })
-
-map("n", "<leader>fL", function()
-  fzf.tags_live_grep()
-end, { desc = "Find tags" })
-
-map("n", "<leader>fl", function()
-  fzf.grep()
-end, { desc = "Grep pattern" })
-
-map("n", "<leader>fg", function()
-  fzf.vcs_files()
-end, { desc = "Search git files" })
-
-map("n", "<leader>f/", function()
-  fzf.search_history()
-end, { desc = "Search history" })
-
-map("n", "z=", function()
-  fzf.spell_suggest({
-    winopts = {
-      border = "rounded",
-      fullscreen = false,
+    defaults = {
+      git_icons = false,
+      file_icons = false,
     },
-  })
-end, { desc = "Spell suggest" })
+    oldfiles = {
+      cwd_only = true,
+    },
+    git = {
+      hunks = {
+        fzf_opts = {
+          ["--layout"] = "reverse-list",
+          ["--multi"] = true,
+          ["--delimiter"] = ":",
+          ["--nth"] = "3..",
+        },
+      },
+    },
+    fzf_opts = {
+      ["--layout"] = "default",
+      ["--cycle"] = true,
+    },
+    keymap = {
+      builtin = {
+        true,
+        ["<C-n>"] = "preview-page-down",
+        ["<C-p>"] = "preview-page-up",
+        ["<C-l>"] = "toggle-preview",
+      },
+      fzf = {
+        true,
+        ["ctrl-n"] = "preview-page-down",
+        ["ctrl-p"] = "preview-page-up",
+        ["ctrl-d"] = "half-page-down",
+        ["ctrl-u"] = "half-page-up",
+        ["ctrl-l"] = "toggle-preview",
+        ["ctrl-q"] = "select-all+accept",
+      },
+    },
+    fzf_colors = {
+      true,
+      bg = "-1",
+      gutter = "-1",
+    },
+  },
+  config = function(_, opts)
+    local fzf = require("fzf-lua")
 
-map("n", "<leader>fz", function()
-  fzf.zoxide()
-end, { desc = "Find zoxide" })
+    fzf.setup(opts)
+    fzf.register_ui_select()
+  end,
+}

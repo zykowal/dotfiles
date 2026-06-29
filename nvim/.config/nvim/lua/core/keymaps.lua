@@ -51,3 +51,5 @@ vim.keymap.del("n", "gri", { silent = true })
 vim.keymap.del("n", "grn", { silent = true })
 vim.keymap.del("n", "grr", { silent = true })
 vim.keymap.del("n", "grt", { silent = true })
+
+vim.keymap.set("n", "<leader>pi", "<cmd>Lazy<CR>", {desc = "Lazy"})
