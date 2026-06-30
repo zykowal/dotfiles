@@ -74,7 +74,7 @@ return {
     },
 
     sources = {
-      default = { "lsp", "buffer", "path", "snippets" },
+      default = { "lsp", "path", "snippets", "buffer"},
     },
 
     fuzzy = { implementation = "prefer_rust" },

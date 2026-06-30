@@ -1,12 +1,11 @@
 local M = {}
-local transparent_augroup = vim.api.nvim_create_augroup("UserThemeTransparent", { clear = true })
 
 --- Accent colors
 M.accents = {
 	red = "#F38BA8",
 	coral = "#FF6B6B",
 	rose = "#FF758F",
-	pink = "#E57AA4",
+	pink = "#F5C2E7",
 	lavender = "#C9A0FF",
 	violet = "#A998F0",
 	blue = "#89B4FA",
@@ -23,8 +22,6 @@ M.accents = {
 M.colors = {
 	accent = M.accents.yellow,
 	white = "#CDD6F4",
-  green = "#A6E3A1",
-  yellow = "#FAB387",
 	light_gray = "#A6A6A6",
 	gray = "#6C7086",
 	ghost = "#4D4D4D",
@@ -34,64 +31,14 @@ M.colors = {
 	diff_change = "#4D4322",
 	diff_delete = "#492523",
 	diff_text = "#857131",
-  match = "#F5C2E7",
-  visual = "#2E3A46",
+	visual = "#2E3A46",
 }
-
--- stylua: ignore start
-M.transparent = {
-	groups = {
-		'Normal', 'NormalNC', 'Comment', 'Constant', 'Special', 'Identifier',
-		'Statement', 'PreProc', 'Type', 'Underlined', 'Todo', 'String', 'Function',
-		'Conditional', 'Repeat', 'Operator', 'Structure', 'LineNr', 'NonText',
-		'SignColumn', 'CursorLine', 'CursorLineNr', 'StatusLine', 'StatusLineNC',
-		'EndOfBuffer', 'NormalFloat', 'FloatBorder', 'FloatTitle', 'WinSeparator',
-		'Pmenu', 'PmenuSel', 'PmenuMatchSel', 'PmenuSbar', 'PmenuThumb', 'FoldColumn', 'Folded',
-	},
-	extra_groups = {},
-	exclude_groups = {},
-	on_clear = function() end,
-}
--- stylua: ignore end
 
 --- Convenience `vim.api.nvim_set_hl()` wrapper
 --- @param name string
 --- @param val vim.api.keyset.highlight
 local function hl(name, val)
 	vim.api.nvim_set_hl(0, name, val)
-end
-
-local function transparent_groups()
-	local groups = vim.list_extend(vim.deepcopy(M.transparent.groups), M.transparent.extra_groups)
-	local excluded = {}
-
-	for _, group in ipairs(M.transparent.exclude_groups) do
-		excluded[group] = true
-	end
-
-	return vim.tbl_filter(function(group)
-		return not excluded[group]
-	end, groups)
-end
-
-local function clear_group_bg(group)
-	local ok, group_hl = pcall(vim.api.nvim_get_hl, 0, { name = group, link = false })
-	if not ok then
-		return
-	end
-
-	group_hl.bg = nil
-	group_hl.ctermbg = nil
-
-	vim.api.nvim_set_hl(0, group, group_hl)
-end
-
-function M.clear_transparent()
-	for _, group in ipairs(transparent_groups()) do
-		clear_group_bg(group)
-	end
-
-	M.transparent.on_clear()
 end
 
 function M.colorscheme()
@@ -145,6 +92,8 @@ function M.colorscheme()
 	hl("FzfLuaSearch", { bg = M.colors.dark_gray, fg = M.colors.accent, bold = true })
 	hl("Function", { link = "Normal" })
 	hl("Identifier", { link = "Normal" })
+	hl("JumpCharDim", { fg = M.colors.gray })
+	hl("JumpCharLabel", { fg = M.accents.green })
 	hl("Keyword", { fg = M.colors.accent })
 	hl("LineNr", { fg = M.colors.light_gray })
 	hl("LineNrBelow", { fg = M.colors.gray })
@@ -175,7 +124,7 @@ function M.colorscheme()
 	hl("Statement", { fg = M.colors.accent })
 	hl("StatusLine", { bg = M.colors.ghost, fg = M.colors.white })
 	hl("StatusLineNC", { bg = M.colors.dark_gray, fg = M.colors.white })
-	hl("String", { fg = M.colors.green })
+	hl("String", { fg = M.accents.green })
 	hl("TabLineSel", { fg = M.colors.white })
 	hl("Title", { fg = M.colors.white })
 	hl("Todo", { link = "Normal" })
@@ -185,42 +134,27 @@ function M.colorscheme()
 	hl("WinBar", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinBarNC", { bg = M.colors.accent, fg = M.colors.dark })
 	hl("WinSeparator", { fg = M.colors.gray })
-	hl("JumpCharLabel", { fg = M.colors.green })
-	hl("JumpCharDim", { fg = M.colors.gray })
 
 	vim.api.nvim_exec_autocmds("ColorScheme", { modeline = false, pattern = vim.g.colors_name })
-	M.clear_transparent()
 end
 
 --- Configure colorscheme
---- @param opts? Colors|{ colors?: Colors, transparent?: table }
+--- @param opts? Colors|{ colors?: Colors }
 function M.setup(opts)
 	if opts ~= nil then
 		vim.validate({
 			opts = { opts, "t" },
 			colors = { opts.colors, "t", true },
-			transparent = { opts.transparent, "t", true },
 		})
 
-		if opts.colors ~= nil or opts.transparent ~= nil then
-			if opts.colors ~= nil then
-				M.colors = vim.tbl_extend("force", M.colors, opts.colors)
-			end
-			if opts.transparent ~= nil then
-				M.transparent = vim.tbl_extend("force", M.transparent, opts.transparent)
-			end
+		if opts.colors ~= nil then
+			M.colors = vim.tbl_extend("force", M.colors, opts.colors)
 		else
 			M.colors = vim.tbl_extend("force", M.colors, opts)
 		end
 	end
 
-	vim.api.nvim_clear_autocmds({ group = transparent_augroup })
-	vim.api.nvim_create_autocmd("ColorScheme", {
-		group = transparent_augroup,
-		callback = M.clear_transparent,
-	})
+	M.colorscheme()
 end
-
-M.colorscheme()
 
 return M

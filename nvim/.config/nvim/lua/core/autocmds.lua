@@ -16,31 +16,50 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 
 vim.api.nvim_create_autocmd("FileType", {
   pattern = {
-    "help", "vim", "checkhealth", "gitsigns-blame"
+    "checkhealth",
+    "gitsigns-blame",
+    "help",
+    "lspinfo",
+    "notify",
+    "qf",
+    "startuptime",
+    "fugitive",
+    "git",
+    "vim",
   },
   callback = function(event)
-    vim.keymap.set("n", "q", function()
-      vim.cmd("close")
-    end, { buffer = event.buf, silent = true })
+    vim.bo[event.buf].buflisted = false
+    vim.schedule(function()
+      vim.keymap.set("n", "q", function()
+        vim.cmd("close")
+        pcall(vim.api.nvim_buf_delete, event.buf, { force = true })
+      end, {
+        buffer = event.buf,
+        silent = true,
+        desc = "Quit buffer",
+      })
+      vim.keymap.set("n", "o", "<CR>", { buffer = event.buf, silent = true })
+    end)
   end,
 })
 
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'qf',
-  callback = function()
-    local opts = { buffer = true, silent = true }
-    vim.keymap.set('n', 'o', '<CR>', opts)
-    vim.keymap.set('n', 'q', function () vim.cmd("close") end, opts)
-    vim.keymap.set('n', '>', '<C-w>+', opts)
-    vim.keymap.set('n', '<', '<C-w>-', opts)
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = { "man" },
+  callback = function(event)
+    vim.bo[event.buf].buflisted = false
   end,
 })
 
--- Set MenuBar to transparent
-vim.api.nvim_create_autocmd({ 'ColorScheme', 'UIEnter' }, {
-  pattern = '*',
-  callback = function()
-    vim.api.nvim_set_hl(0, 'PmenuSbar', { bg = 'NONE', fg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'PmenuThumb', { bg = 'NONE', fg = 'NONE' })
+vim.api.nvim_create_autocmd('LspProgress', {
+  callback = function(ev)
+    local value = ev.data.params.value
+    vim.api.nvim_echo({ { value.message or 'done' } }, false, {
+      id = 'lsp.' .. ev.data.client_id,
+      kind = 'progress',
+      source = 'vim.lsp',
+      title = value.title,
+      status = value.kind ~= 'end' and 'running' or 'success',
+      percent = value.percentage,
+    })
   end,
 })

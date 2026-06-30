@@ -3,6 +3,7 @@ require("core.keymaps")
 require("core.options")
 
 require("core.theme").setup()
+require("core.transparent").setup()
 require("core.session").setup()
 require("core.terminal").setup()
 require("core.center").setup()

@@ -33,6 +33,10 @@ local function stay_centered(ctx)
         return
     end
 
+    if vim.bo.buftype == "terminal" then
+        return
+    end
+
     if must_skip_file(ctx.cfg.skip_filetypes, vim.bo.filetype) then
         return
     end
