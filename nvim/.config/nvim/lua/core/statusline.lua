@@ -1,4 +1,3 @@
--- Custom statusline implementation with dynamic mode, git, diagnostics, and LSP info
 local M = {}
 local H = {}
 
@@ -11,7 +10,6 @@ local nvim_set_hl = api.nvim_set_hl
 local nvim_buf_is_valid = api.nvim_buf_is_valid
 local nvim_create_augroup = api.nvim_create_augroup
 local nvim_create_autocmd = api.nvim_create_autocmd
-local nvim_buf_get_lines = api.nvim_buf_get_lines
 local nvim_get_current_win = api.nvim_get_current_win
 
 local diagnostic_get = vim.diagnostic.get
@@ -43,28 +41,30 @@ local palette = {
   StatusWarn = "#f9e2af",
   StatusInfo = "#89dceb",
   StatusHint = "#94e2d5",
+  StatusMacro = "#cdd6f4",
 }
 
 local mode_labels = {}
 local mode_highlights = {}
+local mode_label_width = 3
 
 for _, spec in ipairs({
-  { hl = "StatusModeNormal", label = " ", modes = { "n", "niI", "niR", "niV", "nt" } },
-  { hl = "StatusModeNormal", label = " ", modes = { "no", "nov", "noV", "no\22" } },
-  { hl = "StatusModeVisual", label = " ", modes = { "v" } },
-  { hl = "StatusModeVisual", label = " ", modes = { "V" } },
-  { hl = "StatusModeVisual", label = " ", modes = { "\22", "\22s" } },
-  { hl = "StatusModeSelect", label = " ", modes = { "s" } },
-  { hl = "StatusModeSelect", label = " ", modes = { "S" } },
-  { hl = "StatusModeSelect", label = " ", modes = { "\19" } },
-  { hl = "StatusModeInsert", label = " ", modes = { "i", "ic", "ix" } },
-  { hl = "StatusModeReplace", label = " ", modes = { "R", "Rc", "Rx" } },
-  { hl = "StatusModeReplace", label = " ", modes = { "Rv" } },
-  { hl = "StatusModeCommand", label = " ", modes = { "c" } },
-  { hl = "StatusModeCommand", label = " ", modes = { "cv", "ce" } },
-  { hl = "StatusModePrompt", label = " ", modes = { "r", "rm", "r?" } },
-  { hl = "StatusModeShell", label = " ", modes = { "!" } },
-  { hl = "StatusModeTerminal", label = " ", modes = { "t" } },
+  { hl = "StatusModeNormal", label = "NOR", modes = { "n", "niI", "niR", "niV", "nt" } },
+  { hl = "StatusModeNormal", label = "OPE", modes = { "no", "nov", "noV", "no\22" } },
+  { hl = "StatusModeVisual", label = "VIS", modes = { "v" } },
+  { hl = "StatusModeVisual", label = "V-L", modes = { "V" } },
+  { hl = "StatusModeVisual", label = "V-B", modes = { "\22", "\22s" } },
+  { hl = "StatusModeSelect", label = "SEL", modes = { "s" } },
+  { hl = "StatusModeSelect", label = "S-L", modes = { "S" } },
+  { hl = "StatusModeSelect", label = "S-B", modes = { "\19" } },
+  { hl = "StatusModeInsert", label = "INS", modes = { "i", "ic", "ix" } },
+  { hl = "StatusModeReplace", label = "REP", modes = { "R", "Rc", "Rx" } },
+  { hl = "StatusModeReplace", label = "V-R", modes = { "Rv" } },
+  { hl = "StatusModeCommand", label = "CMD", modes = { "c" } },
+  { hl = "StatusModeCommand", label = "EXE", modes = { "cv", "ce" } },
+  { hl = "StatusModePrompt", label = "PRO", modes = { "r", "rm", "r?" } },
+  { hl = "StatusModeShell", label = "SHL", modes = { "!" } },
+  { hl = "StatusModeTerminal", label = "TER", modes = { "t" } },
 }) do
   for _, mode in ipairs(spec.modes) do
     mode_labels[mode] = spec.label
@@ -83,7 +83,7 @@ local function mode_highlight(mode)
 end
 
 local function mode_label(mode)
-  return string.format(" %s", mode_labels[mode] or mode)
+  return string.format(" %-" .. mode_label_width .. "s", mode_labels[mode] or mode)
 end
 
 -- Create default highlights
@@ -252,6 +252,15 @@ H.lsp_label = function()
   return vim.b[nvim_get_current_buf()].statusline_lsp or ""
 end
 
+H.macro_label = function()
+  local register = vim.fn.reg_recording()
+  if register == "" then
+    return ""
+  end
+
+  return " " .. register
+end
+
 H.file_meta = function()
   local meta = {}
   local encoding = H.file_encoding()
@@ -269,13 +278,11 @@ H.file_meta = function()
 end
 
 H.location_label = function()
-  local bufnr = nvim_get_current_buf()
-  local line_nr = vim.fn.line(".")
-  local line = vim.fn.line(".")
-  local col = vim.fn.virtcol(".")
-  local progress = vim.fn.line("$") > 0 and math.floor((line / vim.fn.line("$")) * 100) or 0
+	local line = vim.fn.line(".")
+	local total = vim.fn.line("$")
+	local progress = total > 0 and math.floor((line / total) * 100) or 0
 
-  return string.format("%4d:%-3d %2d%%%%", line, col, progress)
+	return string.format("%3d%%%%", progress)
 end
 
 function M.build()
@@ -306,6 +313,11 @@ function M.build()
   end
 
   parts[#parts + 1] = "%="
+
+  local macro = H.macro_label()
+  if macro ~= "" then
+    parts[#parts + 1] = H.section("StatusMacro", macro)
+  end
 
   local lsp = H.lsp_label()
   if lsp ~= "" then
@@ -359,6 +371,13 @@ H.create_autocommands = function()
     end,
   })
 
+  nvim_create_autocmd({ "RecordingEnter", "RecordingLeave" }, {
+    group = statusline_group,
+    callback = function()
+      vim.schedule(H.request_redraw)
+    end,
+  })
+
   nvim_create_autocmd("User", {
     group = statusline_group,
     pattern = "GitSignsUpdate",
@@ -392,4 +411,3 @@ M.setup = function()
 end
 
 return M
--- Custom statusline implementation with dynamic mode, git, diagnostics, and LSP info
