@@ -10,6 +10,7 @@ return {
 		{ "<C-g>w", "<cmd>Gwrite<cr>", desc = "Git add current file" },
     { "<C-g>a", "<cmd>Git add --all<cr>", desc = "Git add all" },
     { "<C-g>f", "<cmd>Git fetch --all --prune<cr>", desc = "Git fetch" },
+    { "<C-g>i", ":Git ", desc = "Git" },
 	},
   config = function()
     vim.api.nvim_create_autocmd("FileType", {
