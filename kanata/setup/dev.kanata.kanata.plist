@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchDaemon for kanata on macOS (runs as root at boot).
+
+  Requires:
+    - Karabiner-DriverKit-VirtualHIDDevice v6.2.0 (driver v8 breaks kanata 1.12.0)
+    - karabiner-vhid-daemon.plist installed, so the v6 IPC socket exists at
+      /Library/Application Support/org.pqrs/tmp/rootonly/vhidd_server
+    - kanata granted Input Monitoring + Accessibility in System Settings
+
+  Install:
+    sudo cp dev.kanata.kanata.plist /Library/LaunchDaemons/dev.kanata.kanata.plist
+    sudo chown root:wheel /Library/LaunchDaemons/dev.kanata.kanata.plist
+    sudo launchctl bootstrap system /Library/LaunchDaemons/dev.kanata.kanata.plist
+
+  Reload after editing the kanata config:
+    sudo launchctl kickstart -k system/dev.kanata.kanata
+
+  Uninstall:
+    sudo launchctl bootout system/dev.kanata.kanata
+    sudo rm /Library/LaunchDaemons/dev.kanata.kanata.plist
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>dev.kanata.kanata</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/kanata</string>
+        <string>--no-wait</string>
+        <string>-c</string>
+        <string>/Users/xxx/.config/kanata/kanata.kbd</string>
+    </array>
+
+    <key>UserName</key>
+    <string>root</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <key>StandardOutPath</key>
+    <string>/var/log/kanata.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/var/log/kanata.log</string>
+</dict>
+</plist>
