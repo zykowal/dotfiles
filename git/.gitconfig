@@ -1,0 +1,28 @@
+[user]
+	name = xx
+	email = xx
+
+[diff]
+  colorMoved = zebra
+  colorMovedWS = allow-indentation-change
+
+[delta]
+  hunk-header-style = omit
+  line-numbers = true
+  true-color = always
+  hyperlinks = true
+  navigate = true
+  dark = true
+
+[merge]
+  conflictStyle = zdiff3
+
+[core]
+  pager = delta --diff-so-fancy
+
+[interactive]
+  diffFilter = delta --color-only
+  conflictStyle = zdiff3
+
+[init]
+  defaultBranch = main
